@@ -2,7 +2,7 @@ import sys
 import re
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget,
-    QLabel, QLineEdit, QPushButton
+    QLabel, QLineEdit, QPushButton, QTextBrowser
 )
 from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent
@@ -29,11 +29,11 @@ class GraphingCalculator(QMainWindow):
         self.initUI()
         self.canvas = None
         self.toolbar = None
-        self.pressing = False  # Flag to track mouse press state
-        self.dot = None  # To store the dot artist
-        self.text_annotation = None  # To store the text annotation
-        self.selected_graph_index = None  # Index of the graph currently being tracked
-        self.cid_press = None  # Event connection IDs
+        self.pressing = False
+        self.dot = None
+        self.text_annotation = None
+        self.selected_graph_index = None
+        self.cid_press = None
         self.cid_motion = None
         self.cid_release = None
 
@@ -47,12 +47,12 @@ class GraphingCalculator(QMainWindow):
         self.entry_2d = QLineEdit()
         layout.addWidget(self.entry_2d)
 
-        self.plot_button_2d = QPushButton("Plot 2D Graphs")
+        self.plot_button_2d = QPushButton("Plot 2D Graph")
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)
         layout.addWidget(self.plot_button_2d)
 
-        self.result_label = QLabel("")
-        layout.addWidget(self.result_label)
+        self.result_browser = QTextBrowser()
+        layout.addWidget(self.result_browser)
 
     def replace_absolute_value(self, expr_str):
         def repl(match):
@@ -62,10 +62,9 @@ class GraphingCalculator(QMainWindow):
         return expr_str
 
     def plot_graphs_2d(self):
-        self.result_label.setText("")
+        self.result_browser.clear()
         equations_input = self.entry_2d.text()
         try:
-            # Disconnect previous events
             if self.canvas:
                 self.canvas.mpl_disconnect(self.cid_press)
                 self.canvas.mpl_disconnect(self.cid_motion)
@@ -73,10 +72,9 @@ class GraphingCalculator(QMainWindow):
                 self.canvas.setParent(None)
                 self.toolbar.setParent(None)
 
-            # Split the input into separate equations
             equations = equations_input.strip().split()
             if not equations:
-                self.result_label.setText("Please enter at least one equation.")
+                self.result_browser.setText("Please enter at least one equation.")
                 return
 
             x = sp.symbols('x')
@@ -97,23 +95,24 @@ class GraphingCalculator(QMainWindow):
 
             fig, self.ax = plt.subplots(figsize=(6, 5))
 
-            colors = plt.cm.tab10.colors  # Get a list of colors
-            self.y_vals_list = []  # To store y-values for each equation
-            self.expr_list = []  # To store expressions
-            self.lines = []  # To store line objects
+            colors = plt.cm.tab10.colors
+            self.y_vals_list = []
+            self.expr_list = []
+            self.lines = []
+
+            result_text = ""
 
             for idx, equation in enumerate(equations):
                 equation = self.replace_absolute_value(equation)
                 expr = parse_expr(
                     equation, transformations=transformations, local_dict=local_dict)
 
-                # Check for unsupported variables
                 symbols_in_expr = expr.free_symbols
                 if not symbols_in_expr.issubset({x}):
                     unsupported_vars = symbols_in_expr - {x}
                     var_names = ', '.join(str(var) for var in unsupported_vars)
-                    self.result_label.setText(
-                        f"Error: Unsupported variable(s) in equation {idx+1}: {var_names}")
+                    self.result_browser.setText(
+                        f"Error: Unsupported variables in equation {idx+1}: {var_names}")
                     return
 
                 self.expr_list.append(expr)
@@ -121,28 +120,29 @@ class GraphingCalculator(QMainWindow):
                 y_vals = y_func(self.x_vals)
                 self.y_vals_list.append(y_vals)
 
-                # Plot each graph with a different color and label
                 line, = self.ax.plot(
                     self.x_vals, y_vals, color=colors[idx % len(colors)],
                     label=f"${sp.latex(expr)}$")
                 self.lines.append(line)
 
-            # Find intersection points
+                properties = self.compute_function_properties(expr)
+                result_text += f"Equation {idx+1}: {equation}\n"
+                for prop_name, prop_value in properties.items():
+                    result_text += f"{prop_name}: {prop_value}\n"
+                result_text += "\n"
+
             intersections = self.find_intersections()
 
-            # Plot intersection points
             if intersections:
                 x_ints, y_ints = zip(*intersections)
                 self.ax.plot(x_ints, y_ints, 'ko', label='Intersections')
 
-            # Set up the plot
             self.ax.set_xlim([-10, 10])
             self.ax.set_ylim(
                 [np.nanmin([np.nanmin(y) for y in self.y_vals_list]),
                  np.nanmax([np.nanmax(y) for y in self.y_vals_list])])
             self.ax.grid(True)
 
-            # Adjust axes to cross at zero
             self.ax.spines['left'].set_position('zero')
             self.ax.spines['bottom'].set_position('zero')
             self.ax.spines['right'].set_color('none')
@@ -150,7 +150,6 @@ class GraphingCalculator(QMainWindow):
             self.ax.xaxis.set_ticks_position('bottom')
             self.ax.yaxis.set_ticks_position('left')
 
-            # Remove edge labels
             self.ax.set_xlabel('')
             self.ax.set_ylabel('')
 
@@ -159,7 +158,6 @@ class GraphingCalculator(QMainWindow):
             for label in self.ax.get_yticklabels():
                 label.set_fontsize(8)
 
-            # Add legend
             self.ax.legend(loc='upper left', fontsize=8)
 
             self.canvas = FigureCanvas(fig)
@@ -168,47 +166,156 @@ class GraphingCalculator(QMainWindow):
             layout.addWidget(self.toolbar)
             layout.addWidget(self.canvas)
 
-            # Install event filter
             self.canvas.installEventFilter(self)
 
-            # Connect mouse events
             self.cid_press = self.canvas.mpl_connect('button_press_event', self.on_press)
             self.cid_motion = self.canvas.mpl_connect('motion_notify_event', self.on_motion)
             self.cid_release = self.canvas.mpl_connect('button_release_event', self.on_release)
 
             self.canvas.draw()
 
+            self.result_browser.setText(result_text)
+
         except Exception as e:
-            self.result_label.setText(f"Error: {e}")
+            self.result_browser.setText(f"Error: {e}")
+
+    def compute_function_properties(self, expr):
+        x = sp.symbols('x')
+        properties = {}
+
+        try:
+            x_intercepts = sp.solve(expr, x)
+            properties['Zeroes (x-intercepts)'] = x_intercepts
+        except Exception as e:
+            properties['Zeroes (x-intercepts)'] = 'Cannot compute zeroes.'
+
+        try:
+            y_intercept = expr.subs(x, 0)
+            properties['Y-intercept'] = y_intercept
+        except Exception as e:
+            properties['Y-intercept'] = 'Cannot compute Y-intercept.'
+
+        try:
+            limit_pos_inf = sp.limit(expr, x, sp.oo)
+            limit_neg_inf = sp.limit(expr, x, -sp.oo)
+            properties['End behavior'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+        except Exception as e:
+            properties['End behavior'] = 'Cannot compute end behavior.'
+
+        try:
+            derivative = sp.diff(expr, x)
+            properties['First derivative'] = derivative
+
+            critical_points = sp.solve(derivative, x)
+            properties['Critical points'] = critical_points
+        except Exception as e:
+            properties['First derivative'] = 'Cannot compute derivative.'
+
+        try:
+            domain = sp.calculus.util.continuous_domain(expr, x, sp.S.Reals)
+            properties['Domain'] = domain
+        except Exception as e:
+            properties['Domain'] = 'Cannot compute domain.'
+
+        try:
+            critical_points = sp.solve(sp.diff(expr, x), x)
+            test_points = critical_points + [domain.inf, domain.sup]
+            y_vals = []
+            for point in test_points:
+                if point.is_real or point.is_infinite:
+                    y_val = expr.subs(x, point).evalf()
+                    if y_val.is_real:
+                        y_vals.append(y_val)
+
+            y_min = min(y_vals)
+            y_max = max(y_vals)
+
+            limit_pos_inf = sp.limit(expr, x, sp.oo)
+            limit_neg_inf = sp.limit(expr, x, -sp.oo)
+
+            if limit_pos_inf == sp.oo or limit_neg_inf == sp.oo:
+                y_max = '∞'
+            if limit_pos_inf == -sp.oo or limit_neg_inf == -sp.oo:
+                y_min = '-∞'
+
+            properties['Range'] = f"[{y_min}, {y_max}]"
+        except Exception as e:
+            properties['Range'] = 'Cannot compute range.'
+
+        try:
+            discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)
+            if discontinuities:
+                properties['Vertical asymptotes'] = list(discontinuities)
+            else:
+                properties['Vertical asymptotes'] = 'No vertical asymptotes.'
+            limit_pos_inf = sp.limit(expr, x, sp.oo)
+            limit_neg_inf = sp.limit(expr, x, -sp.oo)
+
+            if limit_pos_inf.is_finite and limit_neg_inf.is_finite:
+                if limit_pos_inf == limit_neg_inf:
+                    properties['Horizontal asymptote'] = limit_pos_inf
+                else:
+                    properties['Horizontal asymptote'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+            else:
+                properties['Horizontal asymptote'] = 'No horizontal asymptote.'
+        except Exception as e:
+            properties['Asymptotes'] = 'Cannot compute asymptotes.'
+
+        try:
+            discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)
+            if discontinuities:
+                properties['Discontinuities'] = list(discontinuities)
+            else:
+                properties['Discontinuities'] = 'No discontinuities.'
+        except Exception as e:
+            properties['Discontinuities'] = 'Cannot compute discontinuities.'
+
+        try:
+            second_derivative = sp.diff(expr, x, 2)
+            properties['Second derivative'] = second_derivative
+
+            extrema = []
+            for cp in critical_points:
+                if cp.is_real:
+                    f_cp = expr.subs(x, cp)
+                    fpp_cp = second_derivative.subs(x, cp)
+                    if fpp_cp.is_real:
+                        if fpp_cp > 0:
+                            extrema.append((cp, f_cp, 'Local minimum'))
+                        elif fpp_cp < 0:
+                            extrema.append((cp, f_cp, 'Local maximum'))
+                        else:
+                            extrema.append((cp, f_cp, 'Inflection point'))
+            properties['Local extrema'] = extrema
+        except Exception as e:
+            properties['Local extrema'] = 'Cannot compute local extrema.'
+
+        return properties
 
     def find_intersections(self):
         intersections = []
         x = sp.symbols('x')
 
-        # Generate combinations of equations
         for i, j in combinations(range(len(self.expr_list)), 2):
             expr1 = self.expr_list[i]
             expr2 = self.expr_list[j]
-            # Solve expr1 - expr2 = 0
             try:
                 sol = sp.solve(expr1 - expr2, x)
                 for s in sol:
-                    # Only consider real solutions within the plotting range
                     if s.is_real and -10 <= s.evalf() <= 10:
                         y_val = expr1.subs(x, s).evalf()
                         if y_val.is_real:
                             intersections.append((float(s.evalf()), float(y_val)))
             except Exception as e:
-                continue  # Skip if unable to solve
+                continue
 
-        # Remove duplicate points (if any)
         unique_intersections = list(set(intersections))
         return unique_intersections
 
     def on_press(self, event):
         if event.inaxes != self.ax:
             return
-        if event.button == 1:  # Left mouse button
+        if event.button == 1:
             self.pressing = True
             self.selected_graph_index = None
             self.update_dot(event)
@@ -221,7 +328,7 @@ class GraphingCalculator(QMainWindow):
         self.update_dot(event)
 
     def on_release(self, event):
-        if event.button == 1:  # Left mouse button
+        if event.button == 1:
             self.pressing = False
             self.selected_graph_index = None
             if self.dot:
@@ -239,10 +346,8 @@ class GraphingCalculator(QMainWindow):
         if x is None or y is None:
             return
 
-        # Snapping threshold for x-coordinate
-        x_threshold = 0.2  # Adjust this value to change x snapping sensitivity
+        x_threshold = 0.2
 
-        # Calculate distance to the nearest integer x-value
         x_int = round(x)
         delta_x = abs(x - x_int)
 
@@ -251,9 +356,7 @@ class GraphingCalculator(QMainWindow):
         else:
             x_snap = x
 
-        # If no graph is selected yet, select the closest one
         if self.selected_graph_index is None:
-            # Get y-values of all curves at x_snap
             y_curves = []
             for y_vals in self.y_vals_list:
                 if self.x_vals[0] <= x_snap <= self.x_vals[-1]:
@@ -262,40 +365,33 @@ class GraphingCalculator(QMainWindow):
                     y_curve = np.nan
                 y_curves.append(y_curve)
 
-            # Calculate distances from the mouse position to each curve at (x_snap, y_curve)
             distances = [abs(y - y_curve) for y_curve in y_curves]
-            # Exclude NaN values
             valid_distances = [(dist, idx) for idx, dist in enumerate(distances) if not np.isnan(dist)]
             if not valid_distances:
-                return  # No valid distances
+                return
             min_distance, min_index = min(valid_distances, key=lambda t: t[0])
             y_curve = y_curves[min_index]
 
-            # Snapping threshold for vertical distance
-            y_threshold = 0.5  # Adjust this value to change y snapping sensitivity
+            y_threshold = 0.5
 
             if min_distance < y_threshold:
                 self.selected_graph_index = min_index
             else:
-                return  # Do not create dot if not close enough
+                return
 
-        # Now, update the dot along the selected graph
         y_vals = self.y_vals_list[self.selected_graph_index]
         if self.x_vals[0] <= x_snap <= self.x_vals[-1]:
             y_curve = np.interp(x_snap, self.x_vals, y_vals)
         else:
-            return  # x_snap is out of range
+            return
 
-        # Remove previous dot and annotation if they exist
         if self.dot:
             self.dot.remove()
         if self.text_annotation:
             self.text_annotation.remove()
 
-        # Plot new dot
         self.dot = self.ax.plot(x_snap, y_curve, 'ro')[0]
 
-        # Display coordinates above the dot, including which equation
         x_display = round(x_snap, 2)
         y_display = round(y_curve, 2)
         equation_label = f"${sp.latex(self.expr_list[self.selected_graph_index])}$"
@@ -311,7 +407,8 @@ class GraphingCalculator(QMainWindow):
         if event.type() == QEvent.Type.NativeGesture:
             return self.nativeGestureEvent(event)
         elif event.type() == QEvent.Type.Wheel:
-            return self.wheelEvent(event)
+            self.wheelEvent(event)
+            return event.isAccepted()
         return super(GraphingCalculator, self).eventFilter(source, event)
 
     def nativeGestureEvent(self, event):
@@ -323,16 +420,17 @@ class GraphingCalculator(QMainWindow):
 
     def wheelEvent(self, event):
         if event.angleDelta().y() != 0:
-            # Mouse wheel event
             if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-                # Zoom when Ctrl key is pressed
                 if event.angleDelta().y() > 0:
                     scale_factor = 0.9
                 else:
                     scale_factor = 1.1
                 self.zoom(scale_factor, event)
-                return True
-        return False
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.ignore()
 
     def zoom(self, scale_factor, event):
         ax = self.canvas.figure.axes[0]
