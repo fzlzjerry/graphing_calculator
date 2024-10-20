@@ -300,21 +300,26 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
     def find_intersections(self):
         intersections = []  # List to store intersection points
-        x = sp.symbols('x')  # Define symbolic variable x
-
         for i, j in combinations(range(len(self.expr_list)), 2):  # Iterate over pairs of graphs
-            expr1 = self.expr_list[i]
-            expr2 = self.expr_list[j]
-            try:
-                sol = sp.solve(expr1 - expr2, x)  # Solve for intersection points
-                for s in sol:
-                    if s.is_real and -10 <= s.evalf() <= 10:
-                        y_val = expr1.subs(x, s).evalf()
-                        if y_val.is_real:
-                            intersections.append((float(s.evalf()), float(y_val)))
-            except Exception as e:
-                continue  # Skip if unable to find intersections
-
+            y_vals1 = self.y_vals_list[i]
+            y_vals2 = self.y_vals_list[j]
+            diff = y_vals1 - y_vals2
+            # Handle NaN and infinite values
+            diff = np.where(np.isnan(diff), np.inf, diff)
+            diff = np.where(np.isinf(diff), np.inf, diff)
+            sign_diff = np.sign(diff)
+            # Find indices where the sign of diff changes
+            sign_changes = np.where(np.diff(sign_diff) != 0)[0]
+            for idx in sign_changes:
+                # Get x-values and corresponding y-values
+                x1, x2 = self.x_vals[idx], self.x_vals[idx + 1]
+                y1_diff, y2_diff = diff[idx], diff[idx + 1]
+                if np.isfinite(y1_diff) and np.isfinite(y2_diff):
+                    # Linear interpolation to estimate zero crossing
+                    x_zero = x1 - y1_diff * (x2 - x1) / (y2_diff - y1_diff)
+                    # Get y-value at x_zero
+                    y_zero = np.interp(x_zero, self.x_vals, y_vals1)
+                    intersections.append((x_zero, y_zero))
         unique_intersections = list(set(intersections))  # Remove duplicates
         return unique_intersections  # Return intersections
 
