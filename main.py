@@ -362,6 +362,14 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         else:
             x_snap = x  # Use actual x-value
 
+        # Check for proximity to intersections
+        intersection_threshold = 0.5  # Threshold for snapping to intersections
+        for x_ints, y_ints in self.find_intersections():
+            if abs(x_snap - x_ints) < intersection_threshold and abs(y - y_ints) < intersection_threshold:
+                x_snap = x_ints
+                y = y_ints
+                break
+
         if self.selected_graph_index is None:
             y_curves = []
             for y_vals in self.y_vals_list:
