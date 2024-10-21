@@ -37,6 +37,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.cid_press = None  # Connection ID for mouse press event
         self.cid_motion = None  # Connection ID for mouse motion event
         self.cid_release = None  # Connection ID for mouse release event
+        self.middle_button_pressed = False  # Flag to track middle button press
 
     def initUI(self):
         widget = QWidget()  # Create a central widget
@@ -330,13 +331,19 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.pressing = True  # Set pressing flag
             self.selected_graph_index = None  # Reset selected graph
             self.update_dot(event)  # Update the dot annotation
+        elif event.button == 2:  # Check if the middle button is pressed
+            self.middle_button_pressed = True
+            self.start_pan(event)
 
     def on_motion(self, event):
-        if not self.pressing:
+        if not self.pressing and not self.middle_button_pressed:
             return  # Ignore if mouse not pressed
         if event.inaxes != self.ax:
             return  # Ignore if not within axes
-        self.update_dot(event)  # Update the dot annotation
+        if self.middle_button_pressed:
+            self.pan(event)
+        else:
+            self.update_dot(event)  # Update the dot annotation
 
     def on_release(self, event):
         if event.button == 1:
@@ -349,6 +356,8 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                 self.text_annotation.remove()  # Remove text annotation
                 self.text_annotation = None
             self.canvas.draw_idle()  # Redraw canvas
+        elif event.button == 2:
+            self.middle_button_pressed = False
 
     def update_dot(self, event):
         x = event.xdata  # Get x-coordinate
@@ -470,6 +479,25 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         ax.set_ylim(new_ylim)  # Set new y-axis limits
 
         self.canvas.draw_idle()  # Redraw canvas
+
+    def start_pan(self, event):
+        self.pan_start = (event.xdata, event.ydata)  # Store the starting point
+
+    def pan(self, event):
+        if event.xdata is None or event.ydata is None:
+            return  # Ignore if coordinates are invalid
+
+        dx = event.xdata - self.pan_start[0]
+        dy = event.ydata - self.pan_start[1]
+
+        ax = self.canvas.figure.axes[0]
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+
+        ax.set_xlim(xlim[0] - dx, xlim[1] - dx)
+        ax.set_ylim(ylim[0] - dy, ylim[1] - dy)
+
+        self.canvas.draw_idle()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)  # Create the application
