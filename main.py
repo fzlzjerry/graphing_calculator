@@ -37,18 +37,25 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.cid_press = None  # Connection ID for mouse press event
         self.cid_motion = None  # Connection ID for mouse motion event
         self.cid_release = None  # Connection ID for mouse release event
+        self.panning = False  # Flag to track panning state
+        self.pan_start = None  # Starting point for panning
+
+        self.expr_list = []  # List to store expressions
+        self.lines = []  # List to store line objects
+        self.y_funcs_list = []  # List to store y-functions
+        self.x_vals = None  # Placeholder for x-values
 
     def initUI(self):
         widget = QWidget()  # Create a central widget
         self.setCentralWidget(widget)  # Set the central widget
         layout = QVBoxLayout(widget)  # Create a vertical box layout
 
-        self.label_2d = QLabel("Enter 2D equations (separated by spaces):")  # Label for input
+        self.label_2d = QLabel("输入二维方程（用空格分隔）：")  # Label for input
         layout.addWidget(self.label_2d)  # Add label to layout
         self.entry_2d = QLineEdit()  # Line edit for equation input
         layout.addWidget(self.entry_2d)  # Add line edit to layout
 
-        self.plot_button_2d = QPushButton("Plot 2D Graph")  # Button to plot graphs
+        self.plot_button_2d = QPushButton("绘制二维图像")  # Button to plot graphs
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)  # Connect button to method
         layout.addWidget(self.plot_button_2d)  # Add button to layout
 
@@ -77,7 +84,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
             equations = equations_input.strip().split()  # Split input into equations
             if not equations:
-                self.result_browser.setText("Please enter at least one equation.")  # Prompt user
+                self.result_browser.setText("请输入至少一个方程。")  # Prompt user
                 return  # Exit the method
 
             x = sp.symbols('x')  # Define symbolic variable x
@@ -89,19 +96,19 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                 'log': sp.log, 'sqrt': sp.sqrt, 'Abs': sp.Abs, 'exp': sp.exp, 'ln': sp.log
             }
 
-            self.x_vals = np.linspace(-10, 10, 800)  # Generate x-values for plotting
-            modules = {  # Modules for lambdify to handle functions
+            # Initialize figure and axes
+            fig, self.ax = plt.subplots(figsize=(6, 5))  # Create a figure and axes
+
+            colors = plt.cm.tab10.colors  # Color map for plotting multiple graphs
+            self.y_funcs_list = []  # List to store y-functions
+            self.expr_list = []  # List to store expressions
+            self.lines = []  # List to store line objects
+
+            self.modules = {  # Modules for lambdify to handle functions
                 'sin': np.sin, 'cos': np.cos, 'tan': np.tan, 'log': np.log,
                 'sqrt': np.sqrt, 'Abs': np.abs, 'exp': np.exp, 'ln': np.log,
                 'e': np.e, 'pi': np.pi
             }
-
-            fig, self.ax = plt.subplots(figsize=(6, 5))  # Create a figure and axes
-
-            colors = plt.cm.tab10.colors  # Color map for plotting multiple graphs
-            self.y_vals_list = []  # List to store y-values of graphs
-            self.expr_list = []  # List to store expressions
-            self.lines = []  # List to store line objects
 
             result_text = ""  # String to accumulate results
 
@@ -115,35 +122,30 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                     unsupported_vars = symbols_in_expr - {x}
                     var_names = ', '.join(str(var) for var in unsupported_vars)
                     self.result_browser.setText(
-                        f"Error: Unsupported variables in equation {idx+1}: {var_names}")
+                        f"错误：方程 {idx+1} 中包含不支持的变量：{var_names}")
                     return  # Exit if unsupported variables are found
 
                 self.expr_list.append(expr)  # Add expression to list
-                y_func = sp.lambdify(x, expr, modules=[modules, "numpy"])  # Convert to numerical function
-                y_vals = y_func(self.x_vals)  # Calculate y-values
-                self.y_vals_list.append(y_vals)  # Add y-values to list
+
+                # Initial plotting with a default range
+                x_vals = np.linspace(-10, 10, 800)
+                y_func = sp.lambdify(x, expr, modules=[self.modules, "numpy"])  # Convert to numerical function
+                y_vals = y_func(x_vals)  # Calculate y-values
+                self.y_funcs_list.append(y_func)  # Store the function
 
                 line, = self.ax.plot(  # Plot the graph
-                    self.x_vals, y_vals, color=colors[idx % len(colors)],
+                    x_vals, y_vals, color=colors[idx % len(colors)],
                     label=f"${sp.latex(expr)}$")
                 self.lines.append(line)  # Add line to list
 
                 properties = self.compute_function_properties(expr)  # Compute properties
-                result_text += f"Equation {idx+1}: {equation}\n"  # Add equation info
+                result_text += f"方程 {idx+1}: {equation}\n"  # Add equation info
                 for prop_name, prop_value in properties.items():
                     result_text += f"{prop_name}: {prop_value}\n"  # Add properties
                 result_text += "\n"  # Add a newline for spacing
 
-            intersections = self.find_intersections()  # Find intersections
+            self.update_intersections()  # Find and plot intersections
 
-            if intersections:
-                x_ints, y_ints = zip(*intersections)  # Unpack intersection points
-                self.ax.plot(x_ints, y_ints, 'ko', label='Intersections')  # Plot intersections
-
-            self.ax.set_xlim([-10, 10])  # Set x-axis limits
-            self.ax.set_ylim(  # Set y-axis limits based on data
-                [np.nanmin([np.nanmin(y) for y in self.y_vals_list]),
-                 np.nanmax([np.nanmax(y) for y in self.y_vals_list])])
             self.ax.grid(True)  # Enable grid
 
             # Adjust axes to cross at (0,0)
@@ -183,7 +185,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.result_browser.setText(result_text)  # Display results
 
         except Exception as e:
-            self.result_browser.setText(f"Error: {e}")  # Display error message
+            self.result_browser.setText(f"错误：{e}")  # Display error message
 
     def compute_function_properties(self, expr):
         x = sp.symbols('x')  # Define symbolic variable x
@@ -191,37 +193,37 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         try:
             x_intercepts = sp.solve(expr, x)  # Find x-intercepts
-            properties['Zeroes (x-intercepts)'] = x_intercepts
+            properties['零点（x轴截距）'] = x_intercepts
         except Exception as e:
-            properties['Zeroes (x-intercepts)'] = 'Cannot compute zeroes.'
+            properties['零点（x轴截距）'] = '无法计算零点。'
 
         try:
             y_intercept = expr.subs(x, 0)  # Find y-intercept
-            properties['Y-intercept'] = y_intercept
+            properties['y轴截距'] = y_intercept
         except Exception as e:
-            properties['Y-intercept'] = 'Cannot compute Y-intercept.'
+            properties['y轴截距'] = '无法计算y轴截距。'
 
         try:
             limit_pos_inf = sp.limit(expr, x, sp.oo)  # Limit as x approaches infinity
             limit_neg_inf = sp.limit(expr, x, -sp.oo)  # Limit as x approaches negative infinity
-            properties['End behavior'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+            properties['函数的端行为'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
         except Exception as e:
-            properties['End behavior'] = 'Cannot compute end behavior.'
+            properties['函数的端行为'] = '无法计算函数的端行为。'
 
         try:
             derivative = sp.diff(expr, x)  # Compute first derivative
-            properties['First derivative'] = derivative
+            properties['一阶导数'] = derivative
 
             critical_points = sp.solve(derivative, x)  # Find critical points
-            properties['Critical points'] = critical_points
+            properties['临界点'] = critical_points
         except Exception as e:
-            properties['First derivative'] = 'Cannot compute derivative.'
+            properties['一阶导数'] = '无法计算一阶导数。'
 
         try:
             domain = sp.calculus.util.continuous_domain(expr, x, sp.S.Reals)  # Determine domain
-            properties['Domain'] = domain
+            properties['定义域'] = domain
         except Exception as e:
-            properties['Domain'] = 'Cannot compute domain.'
+            properties['定义域'] = '无法计算定义域。'
 
         try:
             critical_points = sp.solve(sp.diff(expr, x), x)  # Recalculate critical points
@@ -244,41 +246,41 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             if limit_pos_inf == -sp.oo or limit_neg_inf == -sp.oo:
                 y_min = '-∞'
 
-            properties['Range'] = f"[{y_min}, {y_max}]"  # Set range
+            properties['值域'] = f"[{y_min}, {y_max}]"  # Set range
         except Exception as e:
-            properties['Range'] = 'Cannot compute range.'
+            properties['值域'] = '无法计算值域。'
 
         try:
             discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)  # Find discontinuities
             if discontinuities:
-                properties['Vertical asymptotes'] = list(discontinuities)
+                properties['垂直渐近线'] = list(discontinuities)
             else:
-                properties['Vertical asymptotes'] = 'No vertical asymptotes.'
+                properties['垂直渐近线'] = '无垂直渐近线。'
             limit_pos_inf = sp.limit(expr, x, sp.oo)
             limit_neg_inf = sp.limit(expr, x, -sp.oo)
 
             if limit_pos_inf.is_finite and limit_neg_inf.is_finite:
                 if limit_pos_inf == limit_neg_inf:
-                    properties['Horizontal asymptote'] = limit_pos_inf
+                    properties['水平渐近线'] = limit_pos_inf
                 else:
-                    properties['Horizontal asymptote'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+                    properties['水平渐近线'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
             else:
-                properties['Horizontal asymptote'] = 'No horizontal asymptote.'
+                properties['水平渐近线'] = '无水平渐近线。'
         except Exception as e:
-            properties['Asymptotes'] = 'Cannot compute asymptotes.'
+            properties['渐近线'] = '无法计算渐近线。'
 
         try:
             discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)  # Recalculate discontinuities
             if discontinuities:
-                properties['Discontinuities'] = list(discontinuities)
+                properties['间断点'] = list(discontinuities)
             else:
-                properties['Discontinuities'] = 'No discontinuities.'
+                properties['间断点'] = '无间断点。'
         except Exception as e:
-            properties['Discontinuities'] = 'Cannot compute discontinuities.'
+            properties['间断点'] = '无法计算间断点。'
 
         try:
             second_derivative = sp.diff(expr, x, 2)  # Compute second derivative
-            properties['Second derivative'] = second_derivative
+            properties['二阶导数'] = second_derivative
 
             extrema = []
             for cp in critical_points:
@@ -287,22 +289,45 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                     fpp_cp = second_derivative.subs(x, cp)
                     if fpp_cp.is_real:
                         if fpp_cp > 0:
-                            extrema.append((cp, f_cp, 'Local minimum'))
+                            extrema.append((cp, f_cp, '极小值'))
                         elif fpp_cp < 0:
-                            extrema.append((cp, f_cp, 'Local maximum'))
+                            extrema.append((cp, f_cp, '极大值'))
                         else:
-                            extrema.append((cp, f_cp, 'Inflection point'))
-            properties['Local extrema'] = extrema  # Add extrema to properties
+                            extrema.append((cp, f_cp, '拐点'))
+            properties['极值'] = extrema  # Add extrema to properties
         except Exception as e:
-            properties['Local extrema'] = 'Cannot compute local extrema.'
+            properties['极值'] = '无法计算极值。'
 
         return properties  # Return the computed properties
 
+    def update_intersections(self):
+        # Clear existing intersection points
+        if hasattr(self, 'intersection_points'):
+            for point in self.intersection_points:
+                point.remove()
+        self.intersection_points = []
+
+        intersections = self.find_intersections()  # Find intersections
+
+        if intersections:
+            x_ints, y_ints = zip(*intersections)  # Unpack intersection points
+            points = self.ax.plot(x_ints, y_ints, 'ko', label='交点')  # Plot intersections
+            self.intersection_points.extend(points)
+
     def find_intersections(self):
         intersections = []  # List to store intersection points
-        for i, j in combinations(range(len(self.expr_list)), 2):  # Iterate over pairs of graphs
-            y_vals1 = self.y_vals_list[i]
-            y_vals2 = self.y_vals_list[j]
+        combinations_indices = list(combinations(range(len(self.y_funcs_list)), 2))
+        x_min, x_max = self.ax.get_xlim()
+        x_vals = np.linspace(x_min, x_max, 800)
+
+        y_vals_list = []
+        for y_func in self.y_funcs_list:
+            y_vals = y_func(x_vals)
+            y_vals_list.append(y_vals)
+
+        for i, j in combinations_indices:  # Iterate over pairs of graphs
+            y_vals1 = y_vals_list[i]
+            y_vals2 = y_vals_list[j]
             diff = y_vals1 - y_vals2
             # Handle NaN and infinite values
             diff = np.where(np.isnan(diff), np.inf, diff)
@@ -312,15 +337,16 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             sign_changes = np.where(np.diff(sign_diff) != 0)[0]
             for idx in sign_changes:
                 # Get x-values and corresponding y-values
-                x1, x2 = self.x_vals[idx], self.x_vals[idx + 1]
+                x1, x2 = x_vals[idx], x_vals[idx + 1]
                 y1_diff, y2_diff = diff[idx], diff[idx + 1]
                 if np.isfinite(y1_diff) and np.isfinite(y2_diff):
                     # Linear interpolation to estimate zero crossing
                     x_zero = x1 - y1_diff * (x2 - x1) / (y2_diff - y1_diff)
                     # Get y-value at x_zero
-                    y_zero = np.interp(x_zero, self.x_vals, y_vals1)
+                    y_zero = self.y_funcs_list[i](x_zero)
                     intersections.append((x_zero, y_zero))
-        unique_intersections = list(set(intersections))  # Remove duplicates
+        # Remove duplicates
+        unique_intersections = list({(round(x, 5), round(y, 5)) for x, y in intersections})
         return unique_intersections  # Return intersections
 
     def on_press(self, event):
@@ -330,13 +356,30 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.pressing = True  # Set pressing flag
             self.selected_graph_index = None  # Reset selected graph
             self.update_dot(event)  # Update the dot annotation
+        elif event.button == 2:
+            # Middle mouse button pressed
+            self.panning = True  # Set panning flag
+            self.pan_start = (event.xdata, event.ydata)  # Record starting point
 
     def on_motion(self, event):
-        if not self.pressing:
-            return  # Ignore if mouse not pressed
         if event.inaxes != self.ax:
             return  # Ignore if not within axes
-        self.update_dot(event)  # Update the dot annotation
+        if self.panning and self.pan_start:
+            x_start, y_start = self.pan_start
+            x_curr, y_curr = event.xdata, event.ydata
+            if x_curr is None or y_curr is None:
+                return
+            dx = x_start - x_curr
+            dy = y_start - y_curr
+            xlim = self.ax.get_xlim()
+            ylim = self.ax.get_ylim()
+            self.ax.set_xlim(xlim + dx)
+            self.ax.set_ylim(ylim + dy)
+            self.canvas.draw_idle()
+            self.pan_start = (x_curr, y_curr)
+            self.update_plot()  # Update the plot after panning
+        elif self.pressing:
+            self.update_dot(event)  # Update the dot annotation
 
     def on_release(self, event):
         if event.button == 1:
@@ -349,6 +392,10 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                 self.text_annotation.remove()  # Remove text annotation
                 self.text_annotation = None
             self.canvas.draw_idle()  # Redraw canvas
+        elif event.button == 2:
+            # Middle mouse button released
+            self.panning = False
+            self.pan_start = None
 
     def update_dot(self, event):
         x = event.xdata  # Get x-coordinate
@@ -377,12 +424,12 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         if self.selected_graph_index is None:
             y_curves = []
-            for y_vals in self.y_vals_list:
-                if self.x_vals[0] <= x_snap <= self.x_vals[-1]:
-                    y_curve = np.interp(x_snap, self.x_vals, y_vals)  # Interpolate y-value
+            for y_func in self.y_funcs_list:
+                y_curve = y_func(x_snap)
+                if np.isfinite(y_curve):
+                    y_curves.append(y_curve)
                 else:
-                    y_curve = np.nan
-                y_curves.append(y_curve)
+                    y_curves.append(np.nan)
 
             distances = [abs(y - y_curve) for y_curve in y_curves]  # Calculate distances
             valid_distances = [(dist, idx) for idx, dist in enumerate(distances) if not np.isnan(dist)]
@@ -398,11 +445,11 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             else:
                 return  # Ignore if no graph is close enough
 
-        y_vals = self.y_vals_list[self.selected_graph_index]
-        if self.x_vals[0] <= x_snap <= self.x_vals[-1]:
-            y_curve = np.interp(x_snap, self.x_vals, y_vals)  # Interpolate y-value
-        else:
-            return  # Ignore if x is out of bounds
+        y_func = self.y_funcs_list[self.selected_graph_index]
+        y_curve = y_func(x_snap)
+
+        if not np.isfinite(y_curve):
+            return  # Ignore if y is not finite
 
         if self.dot:
             self.dot.remove()  # Remove existing dot
@@ -422,6 +469,33 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         self.canvas.draw_idle()  # Redraw canvas
 
+    def update_plot(self):
+        # Clear existing lines
+        for line in self.lines:
+            line.remove()
+        self.lines.clear()
+
+        # Get current x-limits
+        x_min, x_max = self.ax.get_xlim()
+        x_vals = np.linspace(x_min, x_max, 800)
+
+        colors = plt.cm.tab10.colors  # Color map for plotting multiple graphs
+
+        for idx, (expr, y_func) in enumerate(zip(self.expr_list, self.y_funcs_list)):
+            y_vals = y_func(x_vals)  # Calculate y-values
+            line, = self.ax.plot(  # Plot the graph
+                x_vals, y_vals, color=colors[idx % len(colors)],
+                label=f"${sp.latex(expr)}$")
+            self.lines.append(line)  # Add line to list
+
+        # Remove and redraw legend to avoid duplicates
+        self.ax.legend_.remove()
+        self.ax.legend(loc='upper left', fontsize=8)
+
+        self.update_intersections()  # Update intersections
+
+        self.ax.figure.canvas.draw_idle()  # Redraw the canvas
+
     def eventFilter(self, source, event):
         if event.type() == QEvent.Type.NativeGesture:
             return self.nativeGestureEvent(event)  # Handle native gestures
@@ -438,18 +512,21 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         return False
 
     def wheelEvent(self, event):
-        if event.angleDelta().y() != 0:
-            if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
-                if event.angleDelta().y() > 0:
-                    scale_factor = 0.9  # Zoom out
-                else:
-                    scale_factor = 1.1  # Zoom in
-                self.zoom(scale_factor, event)  # Perform zoom
-                event.accept()
+        angle_delta = event.angleDelta()
+        delta_x = angle_delta.x()
+        delta_y = angle_delta.y()
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
+            # Zooming
+            if delta_y > 0:
+                scale_factor = 0.9  # Zoom out
             else:
-                event.ignore()
+                scale_factor = 1.1  # Zoom in
+            self.zoom(scale_factor, event)  # Perform zoom
+            event.accept()
         else:
-            event.ignore()
+            # Panning
+            self.pan_wheel(delta_x, delta_y, event)
+            event.accept()
 
     def zoom(self, scale_factor, event):
         ax = self.canvas.figure.axes[0]  # Get current axes
@@ -470,6 +547,19 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         ax.set_ylim(new_ylim)  # Set new y-axis limits
 
         self.canvas.draw_idle()  # Redraw canvas
+        self.update_plot()  # Update the plot after zooming
+
+    def pan_wheel(self, delta_x, delta_y, event):
+        ax = self.canvas.figure.axes[0]  # Get current axes
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        # Convert delta to movement in data coordinates
+        dx = -delta_x * (xlim[1] - xlim[0]) / 1000  # Adjust scaling factor as needed
+        dy = delta_y * (ylim[1] - ylim[0]) / 1000  # Adjust scaling factor as needed
+        ax.set_xlim(xlim[0] + dx, xlim[1] + dx)
+        ax.set_ylim(ylim[0] + dy, ylim[1] + dy)
+        self.canvas.draw_idle()
+        self.update_plot()  # Update the plot after panning
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)  # Create the application
