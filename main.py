@@ -1,5 +1,5 @@
 import sys  # Import system-specific parameters and functions
-import re   # Import regular expressions module
+import re  # Import regular expressions module
 
 from PyQt6.QtWidgets import (  # Import PyQt6 widgets for GUI components
     QApplication, QMainWindow, QVBoxLayout, QWidget,
@@ -23,10 +23,15 @@ from itertools import combinations  # Import combinations function
 
 matplotlib.use('QtAgg')  # Use QtAgg backend for Matplotlib
 
+
 class GraphingCalculator(QMainWindow):  # Define the main window class
     def __init__(self):
         super().__init__()  # Initialize the parent class
         self.setWindowTitle("Graphing Calculator")  # Set window title
+
+        # Set the default window size (width x height in pixels)
+        self.resize(600, 1400)
+
         self.initUI()  # Initialize the user interface
         self.canvas = None  # Placeholder for the Matplotlib canvas
         self.toolbar = None  # Placeholder for the Matplotlib toolbar
@@ -50,12 +55,12 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.setCentralWidget(widget)  # Set the central widget
         layout = QVBoxLayout(widget)  # Create a vertical box layout
 
-        self.label_2d = QLabel("输入二维方程（用空格分隔）：")  # Label for input
+        self.label_2d = QLabel("Enter 2D equations (separated by spaces):")  # Label for input
         layout.addWidget(self.label_2d)  # Add label to layout
         self.entry_2d = QLineEdit()  # Line edit for equation input
         layout.addWidget(self.entry_2d)  # Add line edit to layout
 
-        self.plot_button_2d = QPushButton("绘制二维图像")  # Button to plot graphs
+        self.plot_button_2d = QPushButton("Plot 2D Graphs")  # Button to plot graphs
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)  # Connect button to method
         layout.addWidget(self.plot_button_2d)  # Add button to layout
 
@@ -67,6 +72,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         def repl(match):
             inner_expr = match.group(1)
             return f'Abs({inner_expr})'
+
         expr_str = re.sub(r'\|([^|]+)\|', repl, expr_str)  # Substitute using regex
         return expr_str  # Return modified expression string
 
@@ -84,7 +90,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
             equations = equations_input.strip().split()  # Split input into equations
             if not equations:
-                self.result_browser.setText("请输入至少一个方程。")  # Prompt user
+                self.result_browser.setText("Please enter at least one equation.")  # Prompt user
                 return  # Exit the method
 
             x = sp.symbols('x')  # Define symbolic variable x
@@ -96,8 +102,8 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                 'log': sp.log, 'sqrt': sp.sqrt, 'Abs': sp.Abs, 'exp': sp.exp, 'ln': sp.log
             }
 
-            # Initialize figure and axes
-            fig, self.ax = plt.subplots(figsize=(6, 5))  # Create a figure and axes
+            # Initialize figure and axes with increased size
+            fig, self.ax = plt.subplots(figsize=(10, 8))  # Increased from (6, 5) to (10, 8)
 
             colors = plt.cm.tab10.colors  # Color map for plotting multiple graphs
             self.y_funcs_list = []  # List to store y-functions
@@ -106,7 +112,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
             self.modules = {  # Modules for lambdify to handle functions
                 'sin': np.sin, 'cos': np.cos, 'tan': np.tan, 'log': np.log,
-                'sqrt': np.sqrt, 'Abs': np.abs, 'exp': np.exp, 'ln': np.log,
+                'sqrt': np.sqrt, 'Abs': np.abs, 'exp': np.exp, 'ln': sp.log,
                 'e': np.e, 'pi': np.pi
             }
 
@@ -122,7 +128,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                     unsupported_vars = symbols_in_expr - {x}
                     var_names = ', '.join(str(var) for var in unsupported_vars)
                     self.result_browser.setText(
-                        f"错误：方程 {idx+1} 中包含不支持的变量：{var_names}")
+                        f"Error: Equation {idx + 1} contains unsupported variables: {var_names}")
                     return  # Exit if unsupported variables are found
 
                 self.expr_list.append(expr)  # Add expression to list
@@ -133,13 +139,13 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                 y_vals = y_func(x_vals)  # Calculate y-values
                 self.y_funcs_list.append(y_func)  # Store the function
 
-                line, = self.ax.plot(  # Plot the graph
+                line, = self.ax.plot( # Plot the graph
                     x_vals, y_vals, color=colors[idx % len(colors)],
                     label=f"${sp.latex(expr)}$")
                 self.lines.append(line)  # Add line to list
 
                 properties = self.compute_function_properties(expr)  # Compute properties
-                result_text += f"方程 {idx+1}: {equation}\n"  # Add equation info
+                result_text += f"Equation {idx + 1}: {equation}\n"  # Add equation info
                 for prop_name, prop_value in properties.items():
                     result_text += f"{prop_name}: {prop_value}\n"  # Add properties
                 result_text += "\n"  # Add a newline for spacing
@@ -161,11 +167,11 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
             # Set font size for tick labels
             for label in self.ax.get_xticklabels():
-                label.set_fontsize(8)
+                label.set_fontsize(10)  # Increased from 8 to 10
             for label in self.ax.get_yticklabels():
-                label.set_fontsize(8)
+                label.set_fontsize(10)  # Increased from 8 to 10
 
-            self.ax.legend(loc='upper left', fontsize=8)  # Add legend
+            self.ax.legend(loc='upper left', fontsize=10)  # Increased fontsize from 8 to 10
 
             self.canvas = FigureCanvas(fig)  # Create canvas widget
             self.toolbar = NavigationToolbar(self.canvas, self)  # Create toolbar
@@ -185,7 +191,8 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.result_browser.setText(result_text)  # Display results
 
         except Exception as e:
-            self.result_browser.setText(f"错误：{e}")  # Display error message
+            # Handle exceptions and display the error message
+            self.result_browser.setText(f"An error occurred while plotting graphs: {e}")
 
     def compute_function_properties(self, expr):
         x = sp.symbols('x')  # Define symbolic variable x
@@ -193,37 +200,37 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         try:
             x_intercepts = sp.solve(expr, x)  # Find x-intercepts
-            properties['零点（x轴截距）'] = x_intercepts
+            properties['Zero Points (X-Intercepts)'] = x_intercepts
         except Exception as e:
-            properties['零点（x轴截距）'] = '无法计算零点。'
+            properties['Zero Points (X-Intercepts)'] = 'Unable to calculate x-intercepts.'
 
         try:
             y_intercept = expr.subs(x, 0)  # Find y-intercept
-            properties['y轴截距'] = y_intercept
+            properties['Y-Intercept'] = y_intercept
         except Exception as e:
-            properties['y轴截距'] = '无法计算y轴截距。'
+            properties['Y-Intercept'] = 'Unable to calculate y-intercept.'
 
         try:
             limit_pos_inf = sp.limit(expr, x, sp.oo)  # Limit as x approaches infinity
             limit_neg_inf = sp.limit(expr, x, -sp.oo)  # Limit as x approaches negative infinity
-            properties['函数的端行为'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+            properties['Function End Behavior'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
         except Exception as e:
-            properties['函数的端行为'] = '无法计算函数的端行为。'
+            properties['Function End Behavior'] = 'Unable to calculate function end behavior.'
 
         try:
             derivative = sp.diff(expr, x)  # Compute first derivative
-            properties['一阶导数'] = derivative
+            properties['First Derivative'] = derivative
 
             critical_points = sp.solve(derivative, x)  # Find critical points
-            properties['临界点'] = critical_points
+            properties['Critical Points'] = critical_points
         except Exception as e:
-            properties['一阶导数'] = '无法计算一阶导数。'
+            properties['First Derivative'] = 'Unable to calculate first derivative.'
 
         try:
             domain = sp.calculus.util.continuous_domain(expr, x, sp.S.Reals)  # Determine domain
-            properties['定义域'] = domain
+            properties['Domain'] = domain
         except Exception as e:
-            properties['定义域'] = '无法计算定义域。'
+            properties['Domain'] = 'Unable to calculate domain.'
 
         try:
             critical_points = sp.solve(sp.diff(expr, x), x)  # Recalculate critical points
@@ -246,41 +253,41 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             if limit_pos_inf == -sp.oo or limit_neg_inf == -sp.oo:
                 y_min = '-∞'
 
-            properties['值域'] = f"[{y_min}, {y_max}]"  # Set range
+            properties['Range'] = f"[{y_min}, {y_max}]"  # Set range
         except Exception as e:
-            properties['值域'] = '无法计算值域。'
+            properties['Range'] = 'Unable to calculate range.'
 
         try:
             discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)  # Find discontinuities
             if discontinuities:
-                properties['垂直渐近线'] = list(discontinuities)
+                properties['Vertical Asymptotes'] = list(discontinuities)
             else:
-                properties['垂直渐近线'] = '无垂直渐近线。'
+                properties['Vertical Asymptotes'] = 'No vertical asymptotes.'
             limit_pos_inf = sp.limit(expr, x, sp.oo)
             limit_neg_inf = sp.limit(expr, x, -sp.oo)
 
             if limit_pos_inf.is_finite and limit_neg_inf.is_finite:
                 if limit_pos_inf == limit_neg_inf:
-                    properties['水平渐近线'] = limit_pos_inf
+                    properties['Horizontal Asymptote'] = limit_pos_inf
                 else:
-                    properties['水平渐近线'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+                    properties['Horizontal Asymptotes'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
             else:
-                properties['水平渐近线'] = '无水平渐近线。'
+                properties['Horizontal Asymptotes'] = 'No horizontal asymptotes.'
         except Exception as e:
-            properties['渐近线'] = '无法计算渐近线。'
+            properties['Asymptotes'] = 'Unable to calculate asymptotes.'
 
         try:
             discontinuities = sp.calculus.util.discontinuities(expr, x, sp.S.Reals)  # Recalculate discontinuities
             if discontinuities:
-                properties['间断点'] = list(discontinuities)
+                properties['Discontinuities'] = list(discontinuities)
             else:
-                properties['间断点'] = '无间断点。'
+                properties['Discontinuities'] = 'No discontinuities.'
         except Exception as e:
-            properties['间断点'] = '无法计算间断点。'
+            properties['Discontinuities'] = 'Unable to calculate discontinuities.'
 
         try:
             second_derivative = sp.diff(expr, x, 2)  # Compute second derivative
-            properties['二阶导数'] = second_derivative
+            properties['Second Derivative'] = second_derivative
 
             extrema = []
             for cp in critical_points:
@@ -289,14 +296,14 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
                     fpp_cp = second_derivative.subs(x, cp)
                     if fpp_cp.is_real:
                         if fpp_cp > 0:
-                            extrema.append((cp, f_cp, '极小值'))
+                            extrema.append((cp, f_cp, 'Local Minimum'))
                         elif fpp_cp < 0:
-                            extrema.append((cp, f_cp, '极大值'))
+                            extrema.append((cp, f_cp, 'Local Maximum'))
                         else:
-                            extrema.append((cp, f_cp, '拐点'))
-            properties['极值'] = extrema  # Add extrema to properties
+                            extrema.append((cp, f_cp, 'Inflection Point'))
+            properties['Extrema'] = extrema  # Add extrema to properties
         except Exception as e:
-            properties['极值'] = '无法计算极值。'
+            properties['Extrema'] = 'Unable to calculate extrema.'
 
         return properties  # Return the computed properties
 
@@ -311,7 +318,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         if intersections:
             x_ints, y_ints = zip(*intersections)  # Unpack intersection points
-            points = self.ax.plot(x_ints, y_ints, 'ko', label='交点')  # Plot intersections
+            points = self.ax.plot(x_ints, y_ints, 'ko', label='Intersections')  # Plot intersections
             self.intersection_points.extend(points)
 
     def find_intersections(self):
@@ -464,7 +471,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.text_annotation = self.ax.text(  # Add text annotation
             x_snap, y_curve + (self.ax.get_ylim()[1] - self.ax.get_ylim()[0]) * 0.03,
             f"({x_display}, {y_display})\n{equation_label}",
-            fontsize=9, color='black', ha='center', va='bottom'
+            fontsize=10, color='black', ha='center', va='bottom'  # Increased fontsize from 9 to 10
         )
 
         self.canvas.draw_idle()  # Redraw canvas
@@ -489,8 +496,9 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.lines.append(line)  # Add line to list
 
         # Remove and redraw legend to avoid duplicates
-        self.ax.legend_.remove()
-        self.ax.legend(loc='upper left', fontsize=8)
+        if hasattr(self.ax, 'legend_') and self.ax.legend_:
+            self.ax.legend_.remove()
+        self.ax.legend(loc='upper left', fontsize=10)  # Increased fontsize from 8 to 10
 
         self.update_intersections()  # Update intersections
 
@@ -560,6 +568,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         ax.set_ylim(ylim[0] + dy, ylim[1] + dy)
         self.canvas.draw_idle()
         self.update_plot()  # Update the plot after panning
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)  # Create the application
