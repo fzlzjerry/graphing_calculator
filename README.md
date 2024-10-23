@@ -90,7 +90,7 @@ sin(x) x^2
 
 **Input:**
 ```
-|x| x^3 - 3x
+|x| x^3-3x
 ```
 
 **Outcome:**
