@@ -4,7 +4,7 @@ import requests
 import semver
 from PyQt6.QtWidgets import (  # Import PyQt6 widgets for GUI components
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox
+    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter
 )
 from PyQt6.QtCore import Qt, QEvent, QThread, pyqtSignal  # Import core Qt functionality and threading
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent  # Import GUI events
@@ -78,7 +78,7 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.setWindowTitle("Graphing Calculator")  # Set window title
 
         # Set the default window size (width x height in pixels)
-        self.resize(600, 800)  # Adjusted height for better visibility
+        self.resize(800, 600)  # Reasonable initial size
 
         self.initUI()  # Initialize the user interface
         self.canvas = None  # Placeholder for the Matplotlib canvas
@@ -106,6 +106,14 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.setCentralWidget(widget)  # Set the central widget
         main_layout = QVBoxLayout(widget)  # Create a vertical box layout as main layout
 
+        # Create a splitter to allow dynamic resizing between input and plot areas
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        main_layout.addWidget(splitter)
+
+        # Upper widget: Input and buttons
+        upper_widget = QWidget()
+        upper_layout = QVBoxLayout(upper_widget)
+
         # Create a horizontal layout for input and update button
         top_layout = QHBoxLayout()
 
@@ -120,14 +128,24 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.update_button.clicked.connect(self.check_for_updates)  # Connect button to update method
         top_layout.addWidget(self.update_button)  # Add button to top layout
 
-        main_layout.addLayout(top_layout)  # Add top layout to main layout
+        upper_layout.addLayout(top_layout)  # Add top layout to upper layout
 
         self.plot_button_2d = QPushButton("Plot 2D Graphs")  # Button to plot graphs
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)  # Connect button to method
-        main_layout.addWidget(self.plot_button_2d)  # Add plot button to main layout
+        upper_layout.addWidget(self.plot_button_2d)  # Add plot button to upper layout
 
         self.result_browser = QTextBrowser()  # Text browser to display results
-        main_layout.addWidget(self.result_browser)  # Add result browser to main layout
+        upper_layout.addWidget(self.result_browser)  # Add result browser to upper layout
+
+        splitter.addWidget(upper_widget)  # Add upper widget to splitter
+
+        # Lower widget: Plot area
+        self.plot_widget = QWidget()
+        self.plot_layout = QVBoxLayout(self.plot_widget)
+        splitter.addWidget(self.plot_widget)  # Add plot widget to splitter
+
+        splitter.setStretchFactor(0, 1)  # Upper widget takes less space
+        splitter.setStretchFactor(1, 4)  # Plot widget takes more space
 
     def check_for_updates(self):
         self.update_thread = UpdateCheckerThread(
@@ -186,12 +204,15 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.result_browser.clear()  # Clear the result display
         equations_input = self.entry_2d.text()  # Get input from user
         try:
-            # If a canvas already exists, disconnect events and remove it
+            # If canvas already exists, disconnect events and remove it
             if self.canvas:
                 self.canvas.mpl_disconnect(self.cid_press)
                 self.canvas.mpl_disconnect(self.cid_motion)
                 self.canvas.mpl_disconnect(self.cid_release)
+                self.plot_layout.removeWidget(self.canvas)
                 self.canvas.setParent(None)
+            if self.toolbar:
+                self.plot_layout.removeWidget(self.toolbar)
                 self.toolbar.setParent(None)
 
             equations = equations_input.strip().split()  # Split input into equations
@@ -286,9 +307,13 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
             self.canvas = FigureCanvas(fig)  # Create canvas widget
             self.toolbar = NavigationToolbar(self.canvas, self)  # Create toolbar
-            layout = self.centralWidget().layout()  # Get current layout
-            layout.addWidget(self.toolbar)  # Add toolbar to layout
-            layout.addWidget(self.canvas)  # Add canvas to layout
+
+            # Set Size Policy to Expanding, allowing the canvas and toolbar to resize dynamically
+            self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            self.toolbar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+            self.plot_layout.addWidget(self.toolbar)  # Add toolbar to plot layout
+            self.plot_layout.addWidget(self.canvas)  # Add canvas to plot layout
 
             self.canvas.installEventFilter(self)  # Install event filter for canvas
 
