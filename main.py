@@ -1,11 +1,12 @@
 import sys  # Import system-specific parameters and functions
 import re  # Import regular expressions module
-
+import requests
+import semver
 from PyQt6.QtWidgets import (  # Import PyQt6 widgets for GUI components
-    QApplication, QMainWindow, QVBoxLayout, QWidget,
-    QLabel, QLineEdit, QPushButton, QTextBrowser
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
+    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox
 )
-from PyQt6.QtCore import Qt, QEvent  # Import core Qt functionality
+from PyQt6.QtCore import Qt, QEvent, QThread, pyqtSignal  # Import core Qt functionality and threading
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent  # Import GUI events
 import numpy as np  # Import NumPy for numerical operations
 import sympy as sp  # Import SymPy for symbolic mathematics
@@ -23,14 +24,61 @@ from itertools import combinations  # Import combinations function
 
 matplotlib.use('QtAgg')  # Use QtAgg backend for Matplotlib
 
+# GitHub Update Checker Thread
+class UpdateCheckerThread(QThread):
+    update_available = pyqtSignal(str)  # Signal emitted when an update is available
+    up_to_date = pyqtSignal()  # Signal emitted when the application is up to date
+    error = pyqtSignal(str)  # Signal emitted when an error occurs
+
+    def __init__(self, owner, repo, current_version):
+        super().__init__()
+        self.owner = owner
+        self.repo = repo
+        self.current_version = current_version
+
+    def run(self):
+        try:
+            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/releases'
+            response = requests.get(url)
+
+            if response.status_code == 200:
+                releases = response.json()
+                if releases:
+                    latest_release = releases[0]
+                    latest_version = latest_release['tag_name']
+                    cleaned_version = self.clean_version(latest_version)
+                    cleaned_current_version = self.clean_version(self.current_version)
+
+                    if semver.VersionInfo.parse(cleaned_version) > semver.VersionInfo.parse(cleaned_current_version):
+                        self.update_available.emit(latest_version)
+                    else:
+                        self.up_to_date.emit()
+                else:
+                    self.error.emit('No releases found.')
+            else:
+                self.error.emit(f'Failed to fetch releases. Status code: {response.status_code}')
+        except Exception as e:
+            self.error.emit(str(e))
+
+    @staticmethod
+    def clean_version(version):
+        # Remove 'v' prefix and pre-release tags
+        version = version.lstrip('v')
+        version = version.split('-')[0]
+        return version
 
 class GraphingCalculator(QMainWindow):  # Define the main window class
+    # GitHub repository details
+    GITHUB_OWNER = 'fzlzjerry'
+    GITHUB_REPO = 'graphing_calculator'
+    current_version = 'v1.0.1-beta'  # Current local version
+
     def __init__(self):
         super().__init__()  # Initialize the parent class
         self.setWindowTitle("Graphing Calculator")  # Set window title
 
         # Set the default window size (width x height in pixels)
-        self.resize(600, 1400)
+        self.resize(600, 800)  # Adjusted height for better visibility
 
         self.initUI()  # Initialize the user interface
         self.canvas = None  # Placeholder for the Matplotlib canvas
@@ -50,22 +98,80 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         self.y_funcs_list = []  # List to store y-functions
         self.x_vals = None  # Placeholder for x-values
 
+        # Start the update checker thread
+        #self.check_for_updates()
+
     def initUI(self):
         widget = QWidget()  # Create a central widget
         self.setCentralWidget(widget)  # Set the central widget
-        layout = QVBoxLayout(widget)  # Create a vertical box layout
+        main_layout = QVBoxLayout(widget)  # Create a vertical box layout as main layout
+
+        # Create a horizontal layout for input and update button
+        top_layout = QHBoxLayout()
 
         self.label_2d = QLabel("Enter 2D equations (separated by spaces):")  # Label for input
-        layout.addWidget(self.label_2d)  # Add label to layout
+        top_layout.addWidget(self.label_2d)  # Add label to top layout
+
         self.entry_2d = QLineEdit()  # Line edit for equation input
-        layout.addWidget(self.entry_2d)  # Add line edit to layout
+        top_layout.addWidget(self.entry_2d)  # Add line edit to top layout
+
+        self.update_button = QPushButton("Check for Updates")  # Create "Check for Updates" button
+        self.update_button.setFixedSize(150, 30)  # Set fixed size for the button
+        self.update_button.clicked.connect(self.check_for_updates)  # Connect button to update method
+        top_layout.addWidget(self.update_button)  # Add button to top layout
+
+        main_layout.addLayout(top_layout)  # Add top layout to main layout
 
         self.plot_button_2d = QPushButton("Plot 2D Graphs")  # Button to plot graphs
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)  # Connect button to method
-        layout.addWidget(self.plot_button_2d)  # Add button to layout
+        main_layout.addWidget(self.plot_button_2d)  # Add plot button to main layout
 
         self.result_browser = QTextBrowser()  # Text browser to display results
-        layout.addWidget(self.result_browser)  # Add text browser to layout
+        main_layout.addWidget(self.result_browser)  # Add result browser to main layout
+
+    def check_for_updates(self):
+        self.update_thread = UpdateCheckerThread(
+            owner=self.GITHUB_OWNER,
+            repo=self.GITHUB_REPO,
+            current_version=self.current_version
+        )
+        self.update_thread.update_available.connect(self.on_update_available)
+        self.update_thread.up_to_date.connect(self.on_up_to_date)
+        self.update_thread.error.connect(self.on_update_error)
+        self.update_thread.start()
+
+    def on_update_available(self, latest_version):
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setWindowTitle("Update Available")
+        msg_box.setText(f"A new version ({latest_version}) is available.")
+        msg_box.setInformativeText("Would you like to visit the GitHub releases page to download the latest version?")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        ret = msg_box.exec()
+
+        if ret == QMessageBox.StandardButton.Yes:
+            import webbrowser
+            url = f'https://github.com/{self.GITHUB_OWNER}/{self.GITHUB_REPO}/releases'
+            webbrowser.open(url)
+
+    def on_up_to_date(self):
+        # Optionally notify the user that the app is up to date
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.setWindowTitle("No Updates")
+        msg_box.setText("You are using the latest version.")
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
+
+    def on_update_error(self, error_message):
+        # Optionally notify the user about the update check failure
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        msg_box.setWindowTitle("Update Check Failed")
+        msg_box.setText("Could not check for updates.")
+        msg_box.setInformativeText(error_message)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        msg_box.exec()
 
     def replace_absolute_value(self, expr_str):
         # Replace absolute value notation with SymPy's Abs function
@@ -119,36 +225,41 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             result_text = ""  # String to accumulate results
 
             for idx, equation in enumerate(equations):
-                equation = self.replace_absolute_value(equation)  # Handle absolute values
-                expr = parse_expr(  # Parse the equation into a SymPy expression
-                    equation, transformations=transformations, local_dict=local_dict)
+                try:
+                    equation = self.replace_absolute_value(equation)  # Handle absolute values
+                    expr = parse_expr(  # Parse the equation into a SymPy expression
+                        equation, transformations=transformations, local_dict=local_dict)
 
-                symbols_in_expr = expr.free_symbols  # Symbols used in the expression
-                if not symbols_in_expr.issubset({x}):  # Check for unsupported variables
-                    unsupported_vars = symbols_in_expr - {x}
-                    var_names = ', '.join(str(var) for var in unsupported_vars)
-                    self.result_browser.setText(
-                        f"Error: Equation {idx + 1} contains unsupported variables: {var_names}")
-                    return  # Exit if unsupported variables are found
+                    symbols_in_expr = expr.free_symbols  # Symbols used in the expression
+                    if not symbols_in_expr.issubset({x}):  # Check for unsupported variables
+                        unsupported_vars = symbols_in_expr - {x}
+                        var_names = ', '.join(str(var) for var in unsupported_vars)
+                        self.result_browser.setText(
+                            f"Error: Equation {idx + 1} contains unsupported variables: {var_names}")
+                        return  # Exit if unsupported variables are found
 
-                self.expr_list.append(expr)  # Add expression to list
+                    self.expr_list.append(expr)  # Add expression to list
 
-                # Initial plotting with a default range
-                x_vals = np.linspace(-10, 10, 800)
-                y_func = sp.lambdify(x, expr, modules=[self.modules, "numpy"])  # Convert to numerical function
-                y_vals = y_func(x_vals)  # Calculate y-values
-                self.y_funcs_list.append(y_func)  # Store the function
+                    # Initial plotting with a default range
+                    x_vals = np.linspace(-10, 10, 800)
+                    y_func = sp.lambdify(x, expr, modules=[self.modules, "numpy"])  # Convert to numerical function
+                    y_vals = y_func(x_vals)  # Calculate y-values
+                    self.y_funcs_list.append(y_func)  # Store the function
 
-                line, = self.ax.plot( # Plot the graph
-                    x_vals, y_vals, color=colors[idx % len(colors)],
-                    label=f"${sp.latex(expr)}$")
-                self.lines.append(line)  # Add line to list
+                    line, = self.ax.plot( # Plot the graph
+                        x_vals, y_vals, color=colors[idx % len(colors)],
+                        label=f"${sp.latex(expr)}$")
+                    self.lines.append(line)  # Add line to list
 
-                properties = self.compute_function_properties(expr)  # Compute properties
-                result_text += f"Equation {idx + 1}: {equation}\n"  # Add equation info
-                for prop_name, prop_value in properties.items():
-                    result_text += f"{prop_name}: {prop_value}\n"  # Add properties
-                result_text += "\n"  # Add a newline for spacing
+                    properties = self.compute_function_properties(expr)  # Compute properties
+                    result_text += f"Equation {idx + 1}: {equation}\n"  # Add equation info
+                    for prop_name, prop_value in properties.items():
+                        result_text += f"{prop_name}: {prop_value}\n"  # Add properties
+                    result_text += "\n"  # Add a newline for spacing
+
+                except Exception as e:
+                    self.result_browser.setText(f"Error processing equation {idx + 1}: {str(e)}")
+                    return  # Exit if an error occurs
 
             self.update_intersections()  # Find and plot intersections
 
@@ -191,8 +302,9 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
             self.result_browser.setText(result_text)  # Display results
 
         except Exception as e:
-            # Handle exceptions and display the error message
-            self.result_browser.setText(f"An error occurred while plotting graphs: {e}")
+            # Handle any unexpected exceptions in plot_graphs_2d
+            self.result_browser.setText(f"An unexpected error occurred: {str(e)}")
+            return
 
     def compute_function_properties(self, expr):
         x = sp.symbols('x')  # Define symbolic variable x
@@ -200,9 +312,9 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
 
         try:
             x_intercepts = sp.solve(expr, x)  # Find x-intercepts
-            properties['Zero Points (X-Intercepts)'] = x_intercepts
+            properties['X-Intercepts'] = x_intercepts
         except Exception as e:
-            properties['Zero Points (X-Intercepts)'] = 'Unable to calculate x-intercepts.'
+            properties['X-Intercepts'] = 'Unable to calculate x-intercepts.'
 
         try:
             y_intercept = expr.subs(x, 0)  # Find y-intercept
@@ -568,7 +680,6 @@ class GraphingCalculator(QMainWindow):  # Define the main window class
         ax.set_ylim(ylim[0] + dy, ylim[1] + dy)
         self.canvas.draw_idle()
         self.update_plot()  # Update the plot after panning
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)  # Create the application

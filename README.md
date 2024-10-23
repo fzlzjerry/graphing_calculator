@@ -28,7 +28,7 @@ This is a simple graphing calculator designed for pre-calculus students. It not 
 
 ### Prerequisites
 
-- **Python 3.7 or higher**
+- **Python 3.9 or higher**
 - **pip** package manager
 
 ### Required Libraries
@@ -43,7 +43,7 @@ Ensure the following Python libraries are installed:
 You can install all dependencies at once using the following command:
 
 ```bash
-pip install PyQt6 numpy sympy matplotlib
+pip install PyQt6 requests semver sympy numpy matplotlib
 ```
 
 ### Running the Application
