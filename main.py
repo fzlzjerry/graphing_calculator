@@ -180,6 +180,19 @@ class GraphingCalculator(QMainWindow):
         expr_str = re.sub(r'\|([^|]+)\|', repl, expr_str)
         return expr_str
 
+    def replace_inverse_trig_functions(self, expr_str):
+        def repl(match):
+            func = match.group(1)
+            arg = match.group(2)
+            return f'a{func}({arg})'
+        patterns = [
+            r'(sin|cos|tan)\^-1\s*(\([^)]*\)|\w+)',
+            r'(sin|cos|tan)⁻¹\s*(\([^)]*\)|\w+)'
+        ]
+        for pattern in patterns:
+            expr_str = re.sub(pattern, repl, expr_str)
+        return expr_str
+
     def plot_graphs_2d(self):
         self.result_browser.clear()
         equations_input = self.entry_2d.text()
@@ -203,6 +216,7 @@ class GraphingCalculator(QMainWindow):
             local_dict = {
                 'x': x, 'e': np.e, 'pi': np.pi,
                 'sin': sp.sin, 'cos': sp.cos, 'tan': sp.tan,
+                'asin': sp.asin, 'acos': sp.acos, 'atan': sp.atan,
                 'log': sp.log, 'sqrt': sp.sqrt, 'Abs': sp.Abs,
                 'exp': sp.exp, 'ln': sp.log,
                 'sinh': sp.sinh, 'cosh': sp.cosh, 'tanh': sp.tanh,
@@ -219,6 +233,7 @@ class GraphingCalculator(QMainWindow):
             self.lines = []
             self.modules = {
                 'sin': np.sin, 'cos': np.cos, 'tan': np.tan,
+                'asin': np.arcsin, 'acos': np.arccos, 'atan': np.arctan,
                 'log': np.log, 'sqrt': np.sqrt, 'Abs': np.abs,
                 'exp': np.exp, 'ln': np.log, 'e': np.e, 'pi': np.pi,
                 'sinh': np.sinh, 'cosh': np.cosh, 'tanh': np.tanh,
@@ -234,6 +249,7 @@ class GraphingCalculator(QMainWindow):
             for idx, equation in enumerate(equations):
                 try:
                     equation = self.replace_absolute_value(equation)
+                    equation = self.replace_inverse_trig_functions(equation)
                     expr = parse_expr(
                         equation, transformations=transformations, local_dict=local_dict)
                     symbols_in_expr = expr.free_symbols
