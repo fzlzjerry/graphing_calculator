@@ -4,3 +4,4 @@ numpy~=2.1.2
 sympy~=1.13.3
 matplotlib~=3.9.2
 PyQt6~=6.7.1
+scipy~=1.14.1

@@ -39,6 +39,7 @@ Ensure the following Python libraries are installed:
 - NumPy
 - SymPy
 - Matplotlib
+- scipy
 
 You can install all dependencies at once using the following command:
 

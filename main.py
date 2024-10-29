@@ -4,7 +4,7 @@ import requests
 import semver
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter
+    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter, QFileDialog
 )
 from PyQt6.QtCore import Qt, QEvent, QThread, pyqtSignal
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent
@@ -14,6 +14,7 @@ from sympy.parsing.sympy_parser import (
     parse_expr, standard_transformations,
     implicit_multiplication_application, convert_xor, implicit_application
 )
+from sympy.functions.special.bessel import jn, yn
 from matplotlib.backends.backend_qtagg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
@@ -21,6 +22,7 @@ from matplotlib.backends.backend_qtagg import (
 import matplotlib
 import matplotlib.pyplot as plt
 from itertools import combinations
+from scipy import special
 
 matplotlib.use('QtAgg')
 
@@ -110,6 +112,17 @@ class GraphingCalculator(QMainWindow):
         self.plot_button_2d = QPushButton("Plot 2D Graphs")
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)
         upper_layout.addWidget(self.plot_button_2d)
+        buttons_layout = QHBoxLayout()
+        self.save_button = QPushButton("Save Graphs")
+        self.save_button.clicked.connect(self.save_graphs)
+        buttons_layout.addWidget(self.save_button)
+        self.load_button = QPushButton("Load Graphs")
+        self.load_button.clicked.connect(self.load_graphs)
+        buttons_layout.addWidget(self.load_button)
+        self.export_button = QPushButton("Export Graph")
+        self.export_button.clicked.connect(self.export_graph)
+        buttons_layout.addWidget(self.export_button)
+        upper_layout.addLayout(buttons_layout)
         self.result_browser = QTextBrowser()
         upper_layout.addWidget(self.result_browser)
         splitter.addWidget(upper_widget)
@@ -185,12 +198,19 @@ class GraphingCalculator(QMainWindow):
                 self.result_browser.setText("Please enter at least one equation.")
                 return
             x = sp.symbols('x')
-            allowed_symbols = {'x'}
             transformations = standard_transformations + (
                 implicit_multiplication_application, implicit_application, convert_xor)
             local_dict = {
-                'x': x, 'e': np.e, 'pi': np.pi, 'sin': sp.sin, 'cos': sp.cos, 'tan': sp.tan,
-                'log': sp.log, 'sqrt': sp.sqrt, 'Abs': sp.Abs, 'exp': sp.exp, 'ln': sp.log
+                'x': x, 'e': np.e, 'pi': np.pi,
+                'sin': sp.sin, 'cos': sp.cos, 'tan': sp.tan,
+                'log': sp.log, 'sqrt': sp.sqrt, 'Abs': sp.Abs,
+                'exp': sp.exp, 'ln': sp.log,
+                'sinh': sp.sinh, 'cosh': sp.cosh, 'tanh': sp.tanh,
+                'asinh': sp.asinh, 'acosh': sp.acosh, 'atanh': sp.atanh,
+                'sec': sp.sec, 'csc': sp.csc, 'cot': sp.cot,
+                'factorial': sp.factorial, 'gamma': sp.gamma,
+                'erf': sp.erf, 'erfc': sp.erfc,
+                'jn': jn, 'yn': yn
             }
             fig, self.ax = plt.subplots(figsize=(10, 8))
             colors = plt.cm.tab10.colors
@@ -198,9 +218,17 @@ class GraphingCalculator(QMainWindow):
             self.expr_list = []
             self.lines = []
             self.modules = {
-                'sin': np.sin, 'cos': np.cos, 'tan': np.tan, 'log': np.log,
-                'sqrt': np.sqrt, 'Abs': np.abs, 'exp': np.exp, 'ln': sp.log,
-                'e': np.e, 'pi': np.pi
+                'sin': np.sin, 'cos': np.cos, 'tan': np.tan,
+                'log': np.log, 'sqrt': np.sqrt, 'Abs': np.abs,
+                'exp': np.exp, 'ln': np.log, 'e': np.e, 'pi': np.pi,
+                'sinh': np.sinh, 'cosh': np.cosh, 'tanh': np.tanh,
+                'asinh': np.arcsinh, 'acosh': np.arccosh, 'atanh': np.arctanh,
+                'sec': lambda x: 1 / np.cos(x),
+                'csc': lambda x: 1 / np.sin(x),
+                'cot': lambda x: 1 / np.tan(x),
+                'factorial': special.factorial, 'gamma': special.gamma,
+                'erf': special.erf, 'erfc': special.erfc,
+                'jn': special.jn, 'yn': special.yn
             }
             result_text = ""
             for idx, equation in enumerate(equations):
@@ -588,6 +616,43 @@ class GraphingCalculator(QMainWindow):
         ax.set_ylim(ylim[0] + dy, ylim[1] + dy)
         self.canvas.draw_idle()
         self.update_plot()
+
+    def save_graphs(self):
+        options = QFileDialog.Option(0)
+        file_name, _ = QFileDialog.getSaveFileName(self, "Save Graphs", "", "Text Files (*.txt);;All Files (*)", options=options)
+        if file_name:
+            try:
+                equations = self.entry_2d.text()
+                with open(file_name, 'w') as f:
+                    f.write(equations)
+                QMessageBox.information(self, "Success", "Graphs saved successfully.")
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"An error occurred while saving graphs: {str(e)}")
+
+    def load_graphs(self):
+        options = QFileDialog.Option(0)
+        file_name, _ = QFileDialog.getOpenFileName(self, "Load Graphs", "", "Text Files (*.txt);;All Files (*)", options=options)
+        if file_name:
+            try:
+                with open(file_name, 'r') as f:
+                    equations = f.read()
+                self.entry_2d.setText(equations)
+                QMessageBox.information(self, "Success", "Graphs loaded successfully.")
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"An error occurred while loading graphs: {str(e)}")
+
+    def export_graph(self):
+        if self.canvas:
+            options = QFileDialog.Option(0)
+            file_name, _ = QFileDialog.getSaveFileName(self, "Export Graph", "", "PNG Files (*.png);;SVG Files (*.svg);;All Files (*)", options=options)
+            if file_name:
+                try:
+                    self.canvas.figure.savefig(file_name)
+                    QMessageBox.information(self, "Success", "Graph exported successfully.")
+                except Exception as e:
+                    QMessageBox.warning(self, "Error", f"An error occurred while exporting the graph: {str(e)}")
+        else:
+            QMessageBox.warning(self, "Error", "No graph to export.")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
