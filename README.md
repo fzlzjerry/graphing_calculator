@@ -1,37 +1,121 @@
-# Graphing Calculator
+<div align="center">
 
-This is a simple graphing calculator designed for pre-calculus students. It not only plots graphs but also provides first derivatives, domain, asymptotes, y-intercepts, and more. Additionally, it can display the solutions (intersections) between graphs.
+# 📊 Advanced Graphing Calculator
 
-## Features
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-GNU%20AGPL%20v3-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/fzlzjerry/graphing_calculator/pulls)
 
-- **Plot 2D Graphs**: Input multiple 2D expressions and plot them on the same coordinate system.
-- **Function Properties Calculation**:
-    - **Zero Points (X-Intercepts)**: Automatically calculates and displays the zeros of the function.
-    - **Y-Intercept**: Calculates and displays the y-intercept of the function.
-    - **End Behavior**: Analyzes the behavior of the function as \( x \) approaches positive and negative infinity.
-    - **First Derivative**: Computes and displays the first derivative of the function.
-    - **Critical Points**: Identifies and displays the critical points (local minima, maxima, and inflection points).
-    - **Domain**: Determines and displays the domain of the function.
-    - **Range**: Calculates and displays the range of the function.
-    - **Asymptotes**: Automatically detects and displays horizontal and vertical asymptotes.
-    - **Discontinuities**: Identifies and displays points of discontinuity.
-    - **Second Derivative**: Computes and displays the second derivative for concavity analysis.
-- **Intersection Calculation**: Automatically calculates and displays the intersection points between multiple functions.
-- **Interactive Graphics**: Supports zooming and panning for detailed viewing of graph features.
-- **Graph Annotations**: Click on points in the graph to display their coordinates and corresponding equations.
+A powerful mathematical visualization tool crafted for educators and students.
+Transform complex mathematical expressions into interactive, dynamic graphs.
 
-## Screenshot
+[Getting Started](#-getting-started) • [Features](#-key-features) • [Examples](#-examples) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
-![Graphing Calculator UI](https://ice.frostsky.com/2024/10/23/93aa0a1f85f2022dda0966ba84367775.png)
+![Graphing Calculator Interface](https://ice.frostsky.com/2024/12/02/3ea54d757a78de373b554fc51a4bebc2.png)
 
-## Installation Guide
+</div>
 
-### Prerequisites
+## 🌟 Overview
 
-- **Python 3.9 or higher**
-- **pip** package manager
+Advanced Graphing Calculator is a sophisticated mathematical visualization tool that brings complex functions to life. Perfect for:
 
-### Required Libraries
+- 📚 **Students** exploring mathematical concepts
+- 🎓 **Educators** demonstrating function behaviors
+- 🔬 **Researchers** analyzing mathematical relationships
+- 💡 **Anyone** interested in mathematical visualization
+
+## ✨ Key Features
+
+### 📈 Visualization Tools
+- **Multi-Function Plotting**: Visualize multiple functions simultaneously
+- **Interactive Graphs**: Real-time zoom, pan, and point analysis
+- **Smart Annotations**: Automatic labeling of key points and intersections
+
+### 🧮 Mathematical Analysis
+| Feature | Description |
+|---------|-------------|
+| 🎯 Zero Points | Automatically finds x-intercepts |
+| 📊 Derivatives | Calculates first and second derivatives |
+| 🌟 Critical Points | Identifies extrema and inflection points |
+| 🌐 Domain & Range | Determines function boundaries |
+| 📉 Asymptotes | Locates horizontal and vertical asymptotes |
+| ⚠️ Discontinuities | Identifies points of discontinuity |
+
+## 📚 Comprehensive Feature Guide
+
+### 🎨 Basic Features
+| Feature | Description |
+|---------|-------------|
+| 📈 Function Plotting | Plot multiple mathematical functions on the same coordinate system |
+| 🎯 Interactive Points | Click anywhere on the graph to see exact coordinates and function values |
+| 🔄 Real-time Updates | Graphs update automatically when modifying expressions |
+| 💾 Save/Load | Save your function sets and load them later |
+| 📸 Export | Export graphs as PNG or SVG files |
+
+### 🧮 Mathematical Analysis
+| Analysis Type | Description |
+|--------------|-------------|
+| 🎯 Zero Points | Automatically calculates x-intercepts (f(x) = 0) |
+| 📊 Y-Intercept | Determines the point where function crosses y-axis |
+| 📈 Derivatives | Computes first and second derivatives with critical points |
+| 🌐 Domain/Range | Analyzes complete function boundaries |
+| 📉 Asymptotes | Identifies horizontal, vertical, and oblique asymptotes |
+| ⚠️ Discontinuities | Locates points of discontinuity |
+| 💫 Critical Points | Finds local maxima, minima, and inflection points |
+| ➗ End Behavior | Analyzes function behavior as x approaches ±∞ |
+
+### 🛠️ Interactive Tools
+| Tool | Description |
+|------|-------------|
+| 🔍 Zoom | Mouse wheel or pinch gesture for precise zooming |
+| 🤚 Pan | Middle-mouse drag or two-finger slide |
+| 📏 Grid | Toggle grid display for precise measurements |
+| 🎨 Dark Mode | Switch between light and dark themes |
+| 📊 Custom Ranges | Set custom x and y axis ranges |
+
+### 📐 Supported Functions
+| Category | Functions |
+|----------|-----------|
+| Basic | +, -, *, /, ^, √ |
+| Trigonometric | sin, cos, tan, sec, csc, cot |
+| Inverse Trig | asin, acos, atan |
+| Hyperbolic | sinh, cosh, tanh, asinh, acosh, atanh |
+| Exponential | exp, ln, log |
+| Special | Abs (absolute value), factorial, gamma |
+| Bessel | jn (Bessel function of first kind), yn (Bessel function of second kind) |
+
+### 🧪 Advanced Features
+| Feature | Description |
+|---------|-------------|
+| 🔄 Auto-scaling | Automatically adjusts view to show important features |
+| 🎯 Intersection Detection | Automatically finds and marks intersection points |
+| 📝 Smart Labels | Intelligent placement of labels to avoid overlap |
+| 🔍 Point Analysis | Click any point to see detailed function information |
+| 📊 Multiple Functions | Compare multiple functions on the same graph |
+
+### ⚙️ Technical Capabilities
+| Capability | Description |
+|------------|-------------|
+| 🚀 Performance | Optimized for smooth rendering of complex functions |
+| 💻 Cross-platform | Works on Windows, macOS, and Linux |
+| 🎨 High DPI | Support for high-resolution displays |
+| 🔄 Real-time Updates | Instant updates when modifying parameters |
+
+### 🎓 Educational Tools
+| Tool | Description |
+|------|-------------|
+| 📚 Function Templates | Pre-built templates for common functions |
+| 🔍 Step-by-step Analysis | Detailed breakdown of function properties |
+| 📊 Visual Aids | Color-coded graphs and clear annotations |
+| 💡 Error Feedback | Clear error messages with suggestions for correction |
+
+## 🚀 Getting Started
+
+### System Requirements
+- Python 3.9+
+- pip package manager
+
+### Installation
 
 Ensure the following Python libraries are installed:
 
