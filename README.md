@@ -94,7 +94,7 @@ Advanced Graphing Calculator is a sophisticated mathematical visualization tool 
 | 🔄 Auto-scaling | Automatically adjusts view to show important features |
 | 🎯 Intersection Detection | Automatically finds and marks intersection points |
 | 📝 Smart Labels | Intelligent placement of labels to avoid overlap |
-| 🔍 Point Analysis | Click any point to see detailed function information |
+| ���� Point Analysis | Click any point to see detailed function information |
 | 📊 Multiple Functions | Compare multiple functions on the same graph |
 
 ### ⚙️ Technical Capabilities
@@ -115,23 +115,75 @@ Advanced Graphing Calculator is a sophisticated mathematical visualization tool 
 
 ## 📖 Documentation
 
-### Table of Contents
-1. [Installation Guide](#-getting-started)
-2. [Basic Usage](#usage-instructions)
-3. [Feature Documentation](#-comprehensive-feature-guide)
-   - [Basic Features](#-basic-features)
-   - [Mathematical Analysis](#-mathematical-analysis)
-   - [Interactive Tools](#️-interactive-tools)
-   - [Supported Functions](#-supported-functions)
-   - [Advanced Features](#-advanced-features)
-   - [Technical Details](#️-technical-capabilities)
-   - [Educational Tools](#-educational-tools)
-4. [Examples & Tutorials](#examples)
-5. [FAQs](#frequently-asked-questions-faqs)
-6. [Troubleshooting](#important-notes)
-7. [API Reference](https://github.com/fzlzjerry/graphing_calculator/wiki/API-Reference)
+### Function Plotting
+| Feature | Description | Usage |
+|---------|-------------|-------|
+| Basic Plotting | Plot multiple functions simultaneously | Enter expressions separated by spaces (e.g., `x^2 sin(x)`) |
+| Expression Syntax | Supports standard mathematical notation | Use `^` for powers, `*` for multiplication |
+| Absolute Values | Automatic handling of absolute value notation | Use pipe symbols (e.g., `\|x\|`) |
+| Function Templates | Pre-built common function templates | Click template buttons in right panel |
+| Multi-function Support | Compare multiple functions on same graph | Enter multiple expressions with space separation |
 
-For detailed API documentation and advanced usage examples, please visit our [Wiki](https://github.com/fzlzjerry/graphing_calculator/wiki).
+### Mathematical Features
+| Feature | Description | Implementation |
+|---------|-------------|----------------|
+| Zero Points | Find x-intercepts | Uses `sympy.solve()` |
+| Critical Points | Calculate local maxima/minima | Analyzes first/second derivatives |
+| Derivatives | Compute first and second derivatives | Uses `sympy.diff()` |
+| Domain Analysis | Determine function boundaries | Uses `sympy.calculus.util.continuous_domain()` |
+| Range Analysis | Calculate output boundaries | Evaluates critical points and limits |
+| Asymptotes | Find vertical/horizontal asymptotes | Analyzes limits and discontinuities |
+| Intersections | Detect function intersections | Numerical computation with error handling |
+
+### Interactive Controls
+| Control | Action | Description |
+|---------|--------|-------------|
+| Mouse Wheel | Zoom | Scroll to zoom in/out |
+| Ctrl + Wheel | Precise Zoom | Fine-grained zoom control |
+| Middle Mouse | Pan | Click and drag to move view |
+| Left Click | Point Analysis | Shows coordinates and function details |
+| Grid Toggle | Show/Hide Grid | Toggle grid visibility |
+| Dark Mode | Theme Switch | Changes interface theme |
+| Custom Ranges | Set View Bounds | Enter custom x/y axis limits |
+
+### Analysis Features
+| Analysis | Output | Details |
+|----------|---------|---------|
+| Function Properties | Comprehensive analysis | Shows intercepts, derivatives, domain/range |
+| Intersection Points | Automatic detection | Marks and labels intersection points |
+| Critical Values | Extrema identification | Shows local max/min points |
+| Function Behavior | End behavior analysis | Shows limits as x approaches ±∞ |
+| Error Detection | Input validation | Displays clear error messages |
+
+### Data Management
+| Feature | Format | Description |
+|---------|--------|-------------|
+| Save Equations | Text file (.txt) | Save current function set |
+| Load Equations | Text file (.txt) | Load saved function set |
+| Export Graph | PNG/SVG | Export graph as image |
+| Function Templates | Built-in | Quick access to common functions |
+
+### Supported Functions
+| Category | Functions | Examples |
+|----------|-----------|-----------|
+| Arithmetic | +, -, *, /, ^ | `x^2 + 2*x` |
+| Trigonometric | sin, cos, tan, sec, csc, cot | `sin(x) * cos(x)` |
+| Inverse Trig | asin, acos, atan | `asin(x/2)` |
+| Hyperbolic | sinh, cosh, tanh | `sinh(x)` |
+| Exponential | exp, ln, log | `exp(-x^2)` |
+| Special | Abs, factorial, gamma | `|x|`, `gamma(x)` |
+| Bessel | jn, yn | `jn(0,x)` |
+
+### System Requirements
+- Python 3.9+
+- Required Libraries:
+  - PyQt6
+  - NumPy
+  - SymPy
+  - Matplotlib
+  - scipy
+  - requests
+  - semver
 
 ## 🚀 Getting Started
 
