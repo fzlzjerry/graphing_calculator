@@ -6,202 +6,63 @@
 [![License](https://img.shields.io/badge/license-GNU%20AGPL%20v3-blue.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/fzlzjerry/graphing_calculator/pulls)
 
-A powerful mathematical visualization tool crafted for educators and students.
-Transform complex mathematical expressions into interactive, dynamic graphs.
+**A powerful mathematical visualization tool crafted for educators and students. Transform complex mathematical expressions into interactive, dynamic graphs.**
 
 [Getting Started](#-getting-started) • 
 [Key Features](#-key-features) • 
-[Examples](#examples) • 
+[Examples](#-examples) • 
 [Documentation](#-documentation) • 
-[Contributing](#contribution)
+[Contributing](#-contributing)
 
 ![Graphing Calculator Interface](https://ice.frostsky.com/2024/12/02/3ea54d757a78de373b554fc51a4bebc2.png)
 
 </div>
 
+---
+
 ## 🌟 Overview
 
-Advanced Graphing Calculator is a sophisticated mathematical visualization tool that brings complex functions to life. Perfect for:
+**Advanced Graphing Calculator** is a sophisticated mathematical visualization tool that brings complex functions to life. Perfect for:
 
-- ��� **Students** exploring mathematical concepts
-- 🎓 **Educators** demonstrating function behaviors
-- 🔬 **Researchers** analyzing mathematical relationships
-- 💡 **Anyone** interested in mathematical visualization
+- 📚 **Students**: Exploring mathematical concepts
+- 🎓 **Educators**: Demonstrating function behaviors
+- 🔬 **Researchers**: Analyzing mathematical relationships
+- 💡 **Enthusiasts**: Anyone interested in mathematical visualization
 
-## ✨ Key Features
+## 📚 Table of Contents
 
-### 📈 Visualization Tools
-- **Multi-Function Plotting**: Visualize multiple functions simultaneously
-- **Interactive Graphs**: Real-time zoom, pan, and point analysis
-- **Smart Annotations**: Automatic labeling of key points and intersections
-
-### 🧮 Mathematical Analysis
-| Feature | Description |
-|---------|-------------|
-| 🎯 Zero Points | Automatically finds x-intercepts |
-| 📊 Derivatives | Calculates first and second derivatives |
-| 🌟 Critical Points | Identifies extrema and inflection points |
-| 🌐 Domain & Range | Determines function boundaries |
-| 📉 Asymptotes | Locates horizontal and vertical asymptotes |
-| ⚠️ Discontinuities | Identifies points of discontinuity |
-
-## 📚 Comprehensive Feature Guide
-
-### 🎨 Basic Features
-| Feature | Description |
-|---------|-------------|
-| 📈 Function Plotting | Plot multiple mathematical functions on the same coordinate system |
-| 🎯 Interactive Points | Click anywhere on the graph to see exact coordinates and function values |
-| 🔄 Real-time Updates | Graphs update automatically when modifying expressions |
-| 💾 Save/Load | Save your function sets and load them later |
-| 📸 Export | Export graphs as PNG or SVG files |
-
-### 🧮 Mathematical Analysis
-| Analysis Type | Description |
-|--------------|-------------|
-| 🎯 Zero Points | Automatically calculates x-intercepts (f(x) = 0) |
-| 📊 Y-Intercept | Determines the point where function crosses y-axis |
-| 📈 Derivatives | Computes first and second derivatives with critical points |
-| 🌐 Domain/Range | Analyzes complete function boundaries |
-| 📉 Asymptotes | Identifies horizontal, vertical, and oblique asymptotes |
-| ⚠️ Discontinuities | Locates points of discontinuity |
-| 💫 Critical Points | Finds local maxima, minima, and inflection points |
-| ➗ End Behavior | Analyzes function behavior as x approaches ±∞ |
-
-### 🛠️ Interactive Tools
-| Tool | Description |
-|------|-------------|
-| 🔍 Zoom | Mouse wheel or pinch gesture for precise zooming |
-| 🤚 Pan | Middle-mouse drag or two-finger slide |
-| 📏 Grid | Toggle grid display for precise measurements |
-| 🎨 Dark Mode | Switch between light and dark themes |
-| 📊 Custom Ranges | Set custom x and y axis ranges |
-
-### 📐 Supported Functions
-| Category | Functions |
-|----------|-----------|
-| Basic | +, -, *, /, ^, √ |
-| Trigonometric | sin, cos, tan, sec, csc, cot |
-| Inverse Trig | asin, acos, atan |
-| Hyperbolic | sinh, cosh, tanh, asinh, acosh, atanh |
-| Exponential | exp, ln, log |
-| Special | Abs (absolute value), factorial, gamma |
-| Bessel | jn (Bessel function of first kind), yn (Bessel function of second kind) |
-
-### 🧪 Advanced Features
-| Feature | Description |
-|---------|-------------|
-| 🔄 Auto-scaling | Automatically adjusts view to show important features |
-| 🎯 Intersection Detection | Automatically finds and marks intersection points |
-| 📝 Smart Labels | Intelligent placement of labels to avoid overlap |
-| ���� Point Analysis | Click any point to see detailed function information |
-| 📊 Multiple Functions | Compare multiple functions on the same graph |
-
-### ⚙️ Technical Capabilities
-| Capability | Description |
-|------------|-------------|
-| 🚀 Performance | Optimized for smooth rendering of complex functions |
-| 💻 Cross-platform | Works on Windows, macOS, and Linux |
-| 🎨 High DPI | Support for high-resolution displays |
-| 🔄 Real-time Updates | Instant updates when modifying parameters |
-
-### 🎓 Educational Tools
-| Tool | Description |
-|------|-------------|
-| 📚 Function Templates | Pre-built templates for common functions |
-| 🔍 Step-by-step Analysis | Detailed breakdown of function properties |
-| 📊 Visual Aids | Color-coded graphs and clear annotations |
-| 💡 Error Feedback | Clear error messages with suggestions for correction |
-
-## 📖 Documentation
-
-### Function Plotting
-| Feature | Description | Usage |
-|---------|-------------|-------|
-| Basic Plotting | Plot multiple functions simultaneously | Enter expressions separated by spaces (e.g., `x^2 sin(x)`) |
-| Expression Syntax | Supports standard mathematical notation | Use `^` for powers, `*` for multiplication |
-| Absolute Values | Automatic handling of absolute value notation | Use pipe symbols (e.g., `\|x\|`) |
-| Function Templates | Pre-built common function templates | Click template buttons in right panel |
-| Multi-function Support | Compare multiple functions on same graph | Enter multiple expressions with space separation |
-
-### Mathematical Features
-| Feature | Description | Implementation |
-|---------|-------------|----------------|
-| Zero Points | Find x-intercepts | Uses `sympy.solve()` |
-| Critical Points | Calculate local maxima/minima | Analyzes first/second derivatives |
-| Derivatives | Compute first and second derivatives | Uses `sympy.diff()` |
-| Domain Analysis | Determine function boundaries | Uses `sympy.calculus.util.continuous_domain()` |
-| Range Analysis | Calculate output boundaries | Evaluates critical points and limits |
-| Asymptotes | Find vertical/horizontal asymptotes | Analyzes limits and discontinuities |
-| Intersections | Detect function intersections | Numerical computation with error handling |
-
-### Interactive Controls
-| Control | Action | Description |
-|---------|--------|-------------|
-| Mouse Wheel | Zoom | Scroll to zoom in/out |
-| Ctrl + Wheel | Precise Zoom | Fine-grained zoom control |
-| Middle Mouse | Pan | Click and drag to move view |
-| Left Click | Point Analysis | Shows coordinates and function details |
-| Grid Toggle | Show/Hide Grid | Toggle grid visibility |
-| Dark Mode | Theme Switch | Changes interface theme |
-| Custom Ranges | Set View Bounds | Enter custom x/y axis limits |
-
-### Analysis Features
-| Analysis | Output | Details |
-|----------|---------|---------|
-| Function Properties | Comprehensive analysis | Shows intercepts, derivatives, domain/range |
-| Intersection Points | Automatic detection | Marks and labels intersection points |
-| Critical Values | Extrema identification | Shows local max/min points |
-| Function Behavior | End behavior analysis | Shows limits as x approaches ±∞ |
-| Error Detection | Input validation | Displays clear error messages |
-
-### Data Management
-| Feature | Format | Description |
-|---------|--------|-------------|
-| Save Equations | Text file (.txt) | Save current function set |
-| Load Equations | Text file (.txt) | Load saved function set |
-| Export Graph | PNG/SVG | Export graph as image |
-| Function Templates | Built-in | Quick access to common functions |
-
-### Supported Functions
-| Category | Functions | Examples |
-|----------|-----------|-----------|
-| Arithmetic | +, -, *, /, ^ | `x^2 + 2*x` |
-| Trigonometric | sin, cos, tan, sec, csc, cot | `sin(x) * cos(x)` |
-| Inverse Trig | asin, acos, atan | `asin(x/2)` |
-| Hyperbolic | sinh, cosh, tanh | `sinh(x)` |
-| Exponential | exp, ln, log | `exp(-x^2)` |
-| Special | Abs, factorial, gamma | `|x|`, `gamma(x)` |
-| Bessel | jn, yn | `jn(0,x)` |
-
-### System Requirements
-- Python 3.9+
-- Required Libraries:
-  - PyQt6
-  - NumPy
-  - SymPy
-  - Matplotlib
-  - scipy
-  - requests
-  - semver
+1. [Overview](#-overview)
+2. [Getting Started](#-getting-started)
+   - [System Requirements](#system-requirements)
+   - [Installation](#installation)
+   - [Running the Application](#running-the-application)
+3. [Usage Instructions](#-usage-instructions)
+   - [Entering Expressions](#entering-expressions)
+   - [Plotting Graphs](#plotting-graphs)
+   - [Interactive Operations](#interactive-operations)
+4. [Key Features](#-key-features)
+   - [Function Plotting](#function-plotting)
+   - [Mathematical Analysis](#mathematical-analysis)
+   - [Interactive Controls](#interactive-controls)
+   - [Data Management](#data-management)
+   - [Supported Functions](#supported-functions)
+5. [Examples](#-examples)
+6. [Important Notes](#-important-notes)
+7. [Frequently Asked Questions](#-frequently-asked-questions)
+8. [Contributing](#-contributing)
+9. [License](#-license)
+10. [Contact Us](#-contact-us)
 
 ## 🚀 Getting Started
 
 ### System Requirements
-- Python 3.9+
-- pip package manager
+
+- **Python 3.9+**
+- **pip** package manager
 
 ### Installation
 
-Ensure the following Python libraries are installed:
-
-- PyQt6
-- NumPy
-- SymPy
-- Matplotlib
-- scipy
-
-You can install all dependencies at once using the following command:
+Install the required Python libraries using the following command:
 
 ```bash
 pip install PyQt6 requests semver sympy numpy matplotlib
@@ -219,20 +80,75 @@ pip install PyQt6 requests semver sympy numpy matplotlib
 
 ## Usage Instructions
 
-1. **Enter Expressions**:
-    - In the "Enter 2D equations" input field, enter one or more 2D expressions.
-    - Input only expressions, not equations. For example, enter `sin(x) x^2 |x|` to plot `sin(x)`, `x²`, and `|x|`.
-    - Use spaces to separate multiple expressions. Spaces are used to distinguish different formulas.
+### Entering Expressions
 
-2. **Plot Graphs**:
-    - After entering the expressions, click the "Plot 2D Graphs" button.
-    - The application will plot the corresponding graphs and calculate various function properties.
-    - Results will be displayed in the text browser below the plot.
+- In the "Enter 2D equations" input field, enter one or more 2D expressions.
+- Input only expressions, not equations. For example, enter `sin(x) x^2 |x|` to plot `sin(x)`, `x²`, and `|x|`.
+- Use spaces to separate multiple expressions. Spaces are used to distinguish different formulas.
 
-3. **Interactive Operations**:
-    - **Zooming**: Use the mouse wheel to zoom in and out of the graph. Hold the `Ctrl` key and scroll the mouse wheel for precise zooming.
-    - **Panning**: Press and hold the middle mouse button (scroll wheel) and drag to pan the graph.
-    - **View Intersections**: Click on the intersection points in the graph to display their coordinates and corresponding equations.
+### Plotting Graphs
+
+- After entering the expressions, click the "Plot 2D Graphs" button.
+- The application will plot the corresponding graphs and calculate various function properties.
+- Results will be displayed in the text browser below the plot.
+
+### Interactive Operations
+
+- **Zooming**: Use the mouse wheel to zoom in and out of the graph. Hold the `Ctrl` key and scroll the mouse wheel for precise zooming.
+- **Panning**: Press and hold the middle mouse button (scroll wheel) and drag to pan the graph.
+- **View Intersections**: Click on the intersection points in the graph to display their coordinates and corresponding equations.
+
+## ✨ Key Features
+
+### Function Plotting
+
+- **Multi-Function Plotting**: Visualize multiple functions simultaneously
+- **Interactive Graphs**: Real-time zoom, pan, and point analysis
+- **Smart Annotations**: Automatic labeling of key points and intersections
+
+### Mathematical Analysis
+
+| Feature | Description |
+|---------|-------------|
+| 🎯 Zero Points | Automatically finds x-intercepts |
+| 📊 Derivatives | Calculates first and second derivatives |
+| 🌟 Critical Points | Identifies extrema and inflection points |
+| 🌐 Domain & Range | Determines function boundaries |
+| 📉 Asymptotes | Locates horizontal and vertical asymptotes |
+| ⚠️ Discontinuities | Identifies points of discontinuity |
+
+### Interactive Controls
+
+| Control | Action | Description |
+|---------|--------|-------------|
+| Mouse Wheel | Zoom | Scroll to zoom in/out |
+| Ctrl + Wheel | Precise Zoom | Fine-grained zoom control |
+| Middle Mouse | Pan | Click and drag to move view |
+| Left Click | Point Analysis | Shows coordinates and function details |
+| Grid Toggle | Show/Hide Grid | Toggle grid visibility |
+| Dark Mode | Theme Switch | Changes interface theme |
+| Custom Ranges | Set View Bounds | Enter custom x/y axis limits |
+
+### Data Management
+
+| Feature | Format | Description |
+|---------|--------|-------------|
+| Save Equations | Text file (.txt) | Save current function set |
+| Load Equations | Text file (.txt) | Load saved function set |
+| Export Graph | PNG/SVG | Export graph as image |
+| Function Templates | Built-in | Quick access to common functions |
+
+### Supported Functions
+
+| Category | Functions | Examples |
+|----------|-----------|-----------|
+| Arithmetic | +, -, *, /, ^ | `x^2 + 2*x` |
+| Trigonometric | sin, cos, tan, sec, csc, cot | `sin(x) * cos(x)` |
+| Inverse Trig | asin, acos, atan | `asin(x/2)` |
+| Hyperbolic | sinh, cosh, tanh | `sinh(x)` |
+| Exponential | exp, ln, log | `exp(-x^2)` |
+| Special | Abs, factorial, gamma | `|x|`, `gamma(x)` |
+| Bessel | jn, yn | `jn(0,x)` |
 
 ## Examples
 
@@ -280,7 +196,7 @@ sin(x) x^2
 
 **A3**: After plotting the graphs, the results browser will automatically list the first and second derivatives, domain, asymptotes, and other detailed properties for each function.
 
-## Contribution
+## Contributing
 
 Contributions are welcome! If you have suggestions or want to contribute code, please submit an Issue or Pull Request on the [GitHub repository](https://github.com/fzlzjerry/graphing_calculator).
 
@@ -293,4 +209,4 @@ This project is licensed under the GNU Affero General Public License v3.0 Licens
 If you have any questions or suggestions, please reach out to us:
 
 - **Email**: james20081204@gmail.com
-- **GitHub**: [https://github.com/fzlzjerry/graphing_calculator](https://github.com/fzlzjerry/graphing_calculator)
+- **GitHub**: [fzlzjerry/graphing_calculator](https://github.com/fzlzjerry/graphing_calculator)
