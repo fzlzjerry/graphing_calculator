@@ -9,7 +9,11 @@
 A powerful mathematical visualization tool crafted for educators and students.
 Transform complex mathematical expressions into interactive, dynamic graphs.
 
-[Getting Started](#-getting-started) • [Features](#-key-features) • [Examples](#-examples) • [Documentation](#-documentation) • [Contributing](#-contributing)
+[Getting Started](#-getting-started) • 
+[Key Features](#-key-features) • 
+[Examples](#examples) • 
+[Documentation](#-comprehensive-feature-guide) • 
+[Contributing](#contribution)
 
 ![Graphing Calculator Interface](https://ice.frostsky.com/2024/12/02/3ea54d757a78de373b554fc51a4bebc2.png)
 
@@ -19,7 +23,7 @@ Transform complex mathematical expressions into interactive, dynamic graphs.
 
 Advanced Graphing Calculator is a sophisticated mathematical visualization tool that brings complex functions to life. Perfect for:
 
-- 📚 **Students** exploring mathematical concepts
+- ��� **Students** exploring mathematical concepts
 - 🎓 **Educators** demonstrating function behaviors
 - 🔬 **Researchers** analyzing mathematical relationships
 - 💡 **Anyone** interested in mathematical visualization
