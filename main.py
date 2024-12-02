@@ -4,7 +4,7 @@ import requests
 import semver
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
-    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter, QFileDialog
+    QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter, QFileDialog, QStatusBar, QGroupBox, QFormLayout, QGridLayout, QCheckBox
 )
 from PyQt6.QtCore import Qt, QEvent, QThread, pyqtSignal
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent
@@ -92,45 +92,463 @@ class GraphingCalculator(QMainWindow):
         self.x_vals = None
 
     def initUI(self):
-        widget = QWidget()
-        self.setCentralWidget(widget)
-        main_layout = QVBoxLayout(widget)
+        # 定义颜色常量
+        COLORS = {
+            'primary': '#007AFF',
+            'primary_hover': '#0051D5',
+            'primary_pressed': '#003CA6',
+            'secondary': '#F2F2F7',
+            'secondary_hover': '#E5E5EA',
+            'secondary_pressed': '#D1D1D6',
+            'border': '#D1D1D6',
+            'text': '#000000',
+            'text_secondary': '#6C6C70',
+            'background': '#FFFFFF',
+            'error': '#FF3B30',
+            'success': '#34C759',
+        }
+
+        # 设置窗口样式
+        self.setStyleSheet(f"""
+            QMainWindow {{
+                background-color: {COLORS['background']};
+            }}
+            QLabel {{
+                font-family: -apple-system;
+                font-size: 13px;
+                color: {COLORS['text']};
+                padding: 2px 0px;
+            }}
+            QPushButton {{
+                font-family: -apple-system;
+                font-size: 13px;
+                font-weight: 500;
+                color: white;
+                background-color: {COLORS['primary']};
+                border: none;
+                border-radius: 6px;
+                padding: 5px 15px;
+                min-height: 24px;
+                margin: 0px;
+            }}
+            QPushButton:hover {{
+                background-color: {COLORS['primary_hover']};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLORS['primary_pressed']};
+            }}
+            QPushButton:disabled {{
+                background-color: {COLORS['secondary']};
+                color: {COLORS['text_secondary']};
+            }}
+            QPushButton[secondary="true"] {{
+                background-color: {COLORS['secondary']};
+                color: {COLORS['text']};
+            }}
+            QPushButton[secondary="true"]:hover {{
+                background-color: {COLORS['secondary_hover']};
+            }}
+            QPushButton[secondary="true"]:pressed {{
+                background-color: {COLORS['secondary_pressed']};
+            }}
+            QLineEdit {{
+                font-family: -apple-system;
+                font-size: 13px;
+                padding: 5px 10px;
+                border: 1px solid {COLORS['border']};
+                border-radius: 6px;
+                background-color: {COLORS['background']};
+                min-height: 24px;
+                selection-background-color: {COLORS['primary']};
+            }}
+            QLineEdit:focus {{
+                border: 2px solid {COLORS['primary']};
+                background-color: {COLORS['background']};
+            }}
+            QTextBrowser {{
+                font-family: -apple-system;
+                font-size: 13px;
+                line-height: 1.4;
+                border: 1px solid {COLORS['border']};
+                border-radius: 6px;
+                background-color: {COLORS['background']};
+                padding: 10px;
+                selection-background-color: {COLORS['primary']};
+            }}
+            QSplitter::handle {{
+                background-color: {COLORS['border']};
+            }}
+            QToolBar {{
+                border: none;
+                background-color: {COLORS['background']};
+                spacing: 8px;
+                padding: 4px;
+            }}
+            QMessageBox {{
+                background-color: {COLORS['background']};
+            }}
+            QMessageBox QPushButton {{
+                min-width: 85px;
+            }}
+        """)
+
+        # 添加新的状态栏
+        self.statusBar().setStyleSheet(f"""
+            QStatusBar {{
+                background-color: {COLORS['background']};
+                color: {COLORS['text_secondary']};
+                border-top: 1px solid {COLORS['border']};
+                padding: 4px;
+                font-size: 12px;
+            }}
+        """)
+        self.statusBar().showMessage("Ready")
+
+        # 添加右侧功能面板
+        right_panel = QWidget()
+        right_layout = QVBoxLayout(right_panel)
+        right_layout.setSpacing(8)
+        right_layout.setContentsMargins(8, 8, 8, 8)
+
+        # 图形设置组
+        graph_settings = QGroupBox("Graph Settings")
+        graph_settings.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: 600;
+                border: 1px solid {COLORS['border']};
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 8px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 3px;
+            }}
+        """)
+        graph_settings_layout = QFormLayout(graph_settings)
+        graph_settings_layout.setSpacing(8)
+
+        # 坐标轴范围设置
+        self.x_min = QLineEdit("-10")
+        self.x_max = QLineEdit("10")
+        self.y_min = QLineEdit("-10")
+        self.y_max = QLineEdit("10")
+        for widget in [self.x_min, self.x_max, self.y_min, self.y_max]:
+            widget.setFixedWidth(60)
+
+        # 网格布局用于坐标轴范围设置
+        range_layout = QGridLayout()
+        range_layout.addWidget(QLabel("X Range:"), 0, 0)
+        range_layout.addWidget(self.x_min, 0, 1)
+        range_layout.addWidget(QLabel("to"), 0, 2)
+        range_layout.addWidget(self.x_max, 0, 3)
+        range_layout.addWidget(QLabel("Y Range:"), 1, 0)
+        range_layout.addWidget(self.y_min, 1, 1)
+        range_layout.addWidget(QLabel("to"), 1, 2)
+        range_layout.addWidget(self.y_max, 1, 3)
+        
+        graph_settings_layout.addRow(range_layout)
+
+        # 图形样式设置
+        self.grid_checkbox = QCheckBox("Show Grid")
+        self.grid_checkbox.setChecked(True)
+        self.grid_checkbox.stateChanged.connect(self.update_graph_settings)
+        
+        self.dark_mode_checkbox = QCheckBox("Dark Mode")
+        self.dark_mode_checkbox.stateChanged.connect(self.toggle_dark_mode)
+
+        graph_settings_layout.addRow(self.grid_checkbox)
+        graph_settings_layout.addRow(self.dark_mode_checkbox)
+
+        # 添加图形设置到右侧面板
+        right_layout.addWidget(graph_settings)
+
+        # 函数模板组
+        templates_group = QGroupBox("Function Templates")
+        templates_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-weight: 600;
+                border: 1px solid {COLORS['border']};
+                border-radius: 6px;
+                margin-top: 12px;
+                padding-top: 8px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 3px;
+            }}
+        """)
+        templates_layout = QVBoxLayout(templates_group)
+        
+        # 添加常用函数模板
+        templates = [
+            ("Linear", "ax+b"),
+            ("Quadratic", "ax^2+bx+c"),
+            ("Sine", "a*sin(bx+c)"),
+            ("Exponential", "a*e^(bx)"),
+            ("Logarithmic", "a*ln(bx)"),
+        ]
+        
+        for name, template in templates:
+            btn = QPushButton(name)
+            btn.setProperty('secondary', True)
+            btn.setToolTip(template)
+            btn.clicked.connect(lambda checked, t=template: self.insert_template(t))
+            templates_layout.addWidget(btn)
+
+        right_layout.addWidget(templates_group)
+        right_layout.addStretch()
+
+        # 修改主布局为水平布局
+        main_widget = QWidget()
+        self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout(main_widget)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 左侧主要区域
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+        left_layout.setSpacing(16)
+        left_layout.setContentsMargins(20, 20, 20, 20)
+
+        # 创建分割器
         splitter = QSplitter(Qt.Orientation.Vertical)
-        main_layout.addWidget(splitter)
-        upper_widget = QWidget()
-        upper_layout = QVBoxLayout(upper_widget)
-        top_layout = QHBoxLayout()
-        self.label_2d = QLabel("Enter 2D equations (separated by spaces):")
-        top_layout.addWidget(self.label_2d)
-        self.entry_2d = QLineEdit()
-        top_layout.addWidget(self.entry_2d)
-        self.update_button = QPushButton("Check for Updates")
-        self.update_button.setFixedSize(150, 30)
-        self.update_button.clicked.connect(self.check_for_updates)
-        top_layout.addWidget(self.update_button)
-        upper_layout.addLayout(top_layout)
-        self.plot_button_2d = QPushButton("Plot 2D Graphs")
-        self.plot_button_2d.clicked.connect(self.plot_graphs_2d)
-        upper_layout.addWidget(self.plot_button_2d)
-        buttons_layout = QHBoxLayout()
-        self.save_button = QPushButton("Save Graphs")
-        self.save_button.clicked.connect(self.save_graphs)
-        buttons_layout.addWidget(self.save_button)
-        self.load_button = QPushButton("Load Graphs")
-        self.load_button.clicked.connect(self.load_graphs)
-        buttons_layout.addWidget(self.load_button)
-        self.export_button = QPushButton("Export Graph")
-        self.export_button.clicked.connect(self.export_graph)
-        buttons_layout.addWidget(self.export_button)
-        upper_layout.addLayout(buttons_layout)
-        self.result_browser = QTextBrowser()
-        upper_layout.addWidget(self.result_browser)
-        splitter.addWidget(upper_widget)
+        splitter.setHandleWidth(1)
+        left_layout.addWidget(splitter)
+
+        # 图表区域
         self.plot_widget = QWidget()
         self.plot_layout = QVBoxLayout(self.plot_widget)
+        self.plot_layout.setContentsMargins(0, 0, 0, 0)
+        self.plot_layout.setSpacing(4)  # 减小工具栏和图表间距
         splitter.addWidget(self.plot_widget)
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 4)
+
+        # 控制区域
+        control_widget = QWidget()
+        control_layout = QVBoxLayout(control_widget)
+        control_layout.setSpacing(12)
+        control_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 输入区域
+        input_group = QWidget()
+        input_layout = QHBoxLayout(input_group)
+        input_layout.setSpacing(12)
+        input_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.label_2d = QLabel("Enter equations:")
+        self.label_2d.setStyleSheet("font-weight: 600;")
+        input_layout.addWidget(self.label_2d)
+
+        self.entry_2d = QLineEdit()
+        self.entry_2d.setPlaceholderText("Example: x^2 sin(x) x*exp(-x)")
+        input_layout.addWidget(self.entry_2d, 1)
+
+        self.update_button = QPushButton("Updates")
+        self.update_button.setProperty('secondary', True)
+        self.update_button.setFixedWidth(80)
+        input_layout.addWidget(self.update_button)
+
+        control_layout.addWidget(input_group)
+
+        # 按钮组
+        button_group = QWidget()
+        button_layout = QHBoxLayout(button_group)
+        button_layout.setSpacing(8)
+        button_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.plot_button_2d = QPushButton("Plot")
+        self.save_button = QPushButton("Save")
+        self.load_button = QPushButton("Load")
+        self.export_button = QPushButton("Export")
+
+        # 设置次要按钮
+        for button in [self.save_button, self.load_button, self.export_button]:
+            button.setProperty('secondary', True)
+
+        for button in [self.plot_button_2d, self.save_button, self.load_button, self.export_button]:
+            button_layout.addWidget(button)
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            button.setFixedHeight(28)
+
+        control_layout.addWidget(button_group)
+
+        # 结果显���区
+        self.result_browser = QTextBrowser()
+        self.result_browser.setMinimumHeight(120)
+        control_layout.addWidget(self.result_browser)
+
+        splitter.addWidget(control_widget)
+
+        # 设置分割器比例
+        splitter.setStretchFactor(0, 7)
+        splitter.setStretchFactor(1, 3)
+
+        # 添加工具提示
+        self.entry_2d.setToolTip("Enter multiple equations separated by spaces")
+        self.plot_button_2d.setToolTip("Plot the entered equations")
+        self.save_button.setToolTip("Save current equations to file")
+        self.load_button.setToolTip("Load equations from file")
+        self.export_button.setToolTip("Export current graph as image")
+        self.update_button.setToolTip("Check for software updates")
+
+        # 连接按钮事件
+        self.update_button.clicked.connect(self.check_for_updates)
+        self.plot_button_2d.clicked.connect(self.plot_graphs_2d)
+        self.save_button.clicked.connect(self.save_graphs)
+        self.load_button.clicked.connect(self.load_graphs)
+        self.export_button.clicked.connect(self.export_graph)
+
+        main_layout.addWidget(left_widget, stretch=7)
+        main_layout.addWidget(right_panel, stretch=3)
+
+    def toggle_dark_mode(self, state):
+        if state:
+            # 深色模式配色
+            dark_colors = {
+                'background': '#1C1C1E',
+                'text': '#FFFFFF',
+                'text_secondary': '#98989D',
+                'border': '#3A3A3C',
+                'graph_bg': '#2C2C2E',
+                'grid': '#FFFFFF',  # 改为白色
+                'axis': '#98989D'
+            }
+            
+            # 更新图表样式
+            if hasattr(self, 'ax') and self.ax:
+                # 设置图表背景
+                self.ax.set_facecolor(dark_colors['graph_bg'])
+                self.canvas.figure.patch.set_facecolor(dark_colors['background'])
+                
+                # 更新坐标轴颜色
+                for spine in self.ax.spines.values():
+                    spine.set_color(dark_colors['axis'])
+                
+                # 更新刻度标签颜色
+                self.ax.tick_params(colors=dark_colors['text'], which='both')
+                
+                # 更新网格样式 - 修改此处
+                if self.grid_checkbox.isChecked():
+                    self.ax.grid(True, linestyle='--', alpha=0.1, color=dark_colors['grid'], zorder=0)  # 降低不透明度到0.1
+                    # 强制网格显示在最底层
+                    for grid_line in self.ax.get_xgridlines() + self.ax.get_ygridlines():
+                        grid_line.set_zorder(0)
+                        grid_line.set_alpha(0.1)  # 降低不透明度到0.1
+                        grid_line.set_color(dark_colors['grid'])
+                
+                # 更新图例样式
+                if self.ax.get_legend():
+                    legend = self.ax.get_legend()
+                    frame = legend.get_frame()
+                    frame.set_facecolor(dark_colors['graph_bg'])
+                    frame.set_edgecolor(dark_colors['border'])
+                    for text in legend.get_texts():
+                        text.set_color(dark_colors['text'])
+                
+                # 更新坐标轴标签颜色
+                for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
+                    label.set_color(dark_colors['text'])
+                
+                # 如果有点标注，更新其颜色
+                if hasattr(self, 'dot') and self.dot:
+                    self.dot.set_color('#FF453A')  # 使用深色模式下更醒目的红色
+                
+                if hasattr(self, 'text_annotation') and self.text_annotation:
+                    self.text_annotation.set_color(dark_colors['text'])
+                
+                # 更新交点标记的颜色
+                if hasattr(self, 'intersection_points'):
+                    for point in self.intersection_points:
+                        point.set_color('#FF453A')
+                
+                self.canvas.draw()
+        else:
+            # 浅色模式配色
+            light_colors = {
+                'background': '#FFFFFF',
+                'text': '#000000',
+                'border': '#D1D1D6',
+                'grid': '#E5E5EA',
+                'axis': '#000000'
+            }
+            
+            # 更新图表样式
+            if hasattr(self, 'ax') and self.ax:
+                # 设置图表背景
+                self.ax.set_facecolor(light_colors['background'])
+                self.canvas.figure.patch.set_facecolor(light_colors['background'])
+                
+                # 更新坐标轴颜色
+                for spine in self.ax.spines.values():
+                    spine.set_color(light_colors['border'])
+                
+                # 更新刻度标签颜色
+                self.ax.tick_params(colors=light_colors['text'], which='both')
+                
+                # 更新网格样式 - 修改此处
+                if self.grid_checkbox.isChecked():
+                    self.ax.grid(True, linestyle='--', alpha=0.2, color='#000000', zorder=0)
+                    # 强制网格显示在最底层
+                    for grid_line in self.ax.get_xgridlines() + self.ax.get_ygridlines():
+                        grid_line.set_zorder(0)
+                        grid_line.set_alpha(0.2)
+                        grid_line.set_color('#000000')
+                
+                # 更新图例样式
+                if self.ax.get_legend():
+                    legend = self.ax.get_legend()
+                    frame = legend.get_frame()
+                    frame.set_facecolor(light_colors['background'])
+                    frame.set_edgecolor(light_colors['border'])
+                    for text in legend.get_texts():
+                        text.set_color(light_colors['text'])
+                
+                # 更新坐标轴标签颜色
+                for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
+                    label.set_color(light_colors['text'])
+                
+                # 如果有点标注，更新其颜色
+                if hasattr(self, 'dot') and self.dot:
+                    self.dot.set_color('red')
+                
+                if hasattr(self, 'text_annotation') and self.text_annotation:
+                    self.text_annotation.set_color(light_colors['text'])
+                
+                # 更新交点标记的颜色
+                if hasattr(self, 'intersection_points'):
+                    for point in self.intersection_points:
+                        point.set_color('black')
+                
+                self.canvas.draw()
+
+    def update_graph_settings(self):
+        if self.ax:
+            # 更新网格显示
+            self.ax.grid(self.grid_checkbox.isChecked(), linestyle='--', alpha=0.2)
+            
+            try:
+                # 更新坐标轴范围
+                x_min = float(self.x_min.text())
+                x_max = float(self.x_max.text())
+                y_min = float(self.y_min.text())
+                y_max = float(self.y_max.text())
+                
+                self.ax.set_xlim(x_min, x_max)
+                self.ax.set_ylim(y_min, y_max)
+                
+                if self.canvas:
+                    self.canvas.draw()
+            except ValueError:
+                QMessageBox.warning(self, "Error", "Please enter valid numbers for axis ranges.")
+
+    def insert_template(self, template):
+        current_text = self.entry_2d.text()
+        if (current_text and not current_text.endswith(' ')):
+            current_text += ' '
+        self.entry_2d.setText(current_text + template)
 
     def check_for_updates(self):
         self.update_thread = UpdateCheckerThread(
@@ -197,15 +615,13 @@ class GraphingCalculator(QMainWindow):
         self.result_browser.clear()
         equations_input = self.entry_2d.text()
         try:
+            # 清除现有的画布和工具栏
             if self.canvas:
+                for i in reversed(range(self.plot_layout.count())): 
+                    self.plot_layout.itemAt(i).widget().setParent(None)
                 self.canvas.mpl_disconnect(self.cid_press)
                 self.canvas.mpl_disconnect(self.cid_motion)
                 self.canvas.mpl_disconnect(self.cid_release)
-                self.plot_layout.removeWidget(self.canvas)
-                self.canvas.setParent(None)
-            if self.toolbar:
-                self.plot_layout.removeWidget(self.toolbar)
-                self.toolbar.setParent(None)
             equations = equations_input.strip().split()
             if not equations:
                 self.result_browser.setText("Please enter at least one equation.")
@@ -277,32 +693,88 @@ class GraphingCalculator(QMainWindow):
                     self.result_browser.setText(f"Error processing equation {idx + 1}: {str(e)}")
                     return
             self.update_intersections()
-            self.ax.grid(True)
-            self.ax.spines['left'].set_position('zero')
-            self.ax.spines['bottom'].set_position('zero')
-            self.ax.spines['right'].set_color('none')
-            self.ax.spines['top'].set_color('none')
-            self.ax.xaxis.set_ticks_position('bottom')
-            self.ax.yaxis.set_ticks_position('left')
-            self.ax.set_xlabel('')
-            self.ax.set_ylabel('')
-            for label in self.ax.get_xticklabels():
+            # 设置图表样式
+            plt.style.use('default')
+            fig.patch.set_facecolor('#FFFFFF')
+            self.ax.set_facecolor('#FAFAFA')  # 略微灰色背景
+            
+            # 设置网格 - 修改此处
+            if self.grid_checkbox.isChecked():
+                self.ax.grid(True, linestyle='--', alpha=0.2, color='#000000', zorder=0)
+            
+            # 设置坐标轴
+            for spine in ['left', 'bottom', 'right', 'top']:
+                self.ax.spines[spine].set_linewidth(0.5)
+                self.ax.spines[spine].set_color('#D1D1D6')
+            
+            # 美化刻度
+            self.ax.tick_params(axis='both', color='#D1D1D6', width=0.5)
+            
+            # 设置字体
+            for label in self.ax.get_xticklabels() + self.ax.get_yticklabels():
                 label.set_fontsize(10)
-            for label in self.ax.get_yticklabels():
-                label.set_fontsize(10)
-            self.ax.legend(loc='upper left', fontsize=10)
+                label.set_fontfamily('-apple-system')
+                label.set_color('#6C6C70')
+            
+            # 美化图例
+            self.ax.legend(
+                loc='upper left',
+                fontsize=10,
+                frameon=True,
+                fancybox=True,
+                shadow=True,
+                framealpha=0.95,
+                edgecolor='#D1D1D6',
+                borderpad=1,
+                labelspacing=0.5
+            )
+            # 创建新的画布和工具栏
             self.canvas = FigureCanvas(fig)
             self.toolbar = NavigationToolbar(self.canvas, self)
+            self.toolbar.setStyleSheet("""
+                QToolBar {
+                    border: none;
+                    background-color: transparent;
+                    spacing: 8px;
+                }
+                QToolButton {
+                    border: none;
+                    background-color: transparent;
+                    padding: 4px;
+                    border-radius: 4px;
+                }
+                QToolButton:hover {
+                    background-color: #F2F2F7;
+                }
+                QToolButton:pressed {
+                    background-color: #E5E5EA;
+                }
+            """)
+            
+            # 设置画布的大小策略和最小高度
             self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            self.toolbar.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            self.canvas.setMinimumHeight(400)  # 设置最小高度
+            
+            # 先添加工具栏��再添加画布
             self.plot_layout.addWidget(self.toolbar)
             self.plot_layout.addWidget(self.canvas)
+            
+            # 绑定事件
             self.canvas.installEventFilter(self)
             self.cid_press = self.canvas.mpl_connect('button_press_event', self.on_press)
             self.cid_motion = self.canvas.mpl_connect('motion_notify_event', self.on_motion)
             self.cid_release = self.canvas.mpl_connect('button_release_event', self.on_release)
+            
+            # 强制重绘
             self.canvas.draw()
+            self.plot_widget.update()
+            
+            # 显示结果文本
             self.result_browser.setText(result_text)
+            
+            # 更新状态栏
+            self.statusBar().showMessage(f"Plotted {len(equations)} equation(s)")
+            
         except Exception as e:
             self.result_browser.setText(f"An unexpected error occurred: {str(e)}")
             return
