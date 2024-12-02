@@ -12,7 +12,7 @@ Transform complex mathematical expressions into interactive, dynamic graphs.
 [Getting Started](#-getting-started) • 
 [Key Features](#-key-features) • 
 [Examples](#examples) • 
-[Documentation](#-comprehensive-feature-guide) • 
+[Documentation](#-documentation) • 
 [Contributing](#contribution)
 
 ![Graphing Calculator Interface](https://ice.frostsky.com/2024/12/02/3ea54d757a78de373b554fc51a4bebc2.png)
@@ -112,6 +112,26 @@ Advanced Graphing Calculator is a sophisticated mathematical visualization tool 
 | 🔍 Step-by-step Analysis | Detailed breakdown of function properties |
 | 📊 Visual Aids | Color-coded graphs and clear annotations |
 | 💡 Error Feedback | Clear error messages with suggestions for correction |
+
+## 📖 Documentation
+
+### Table of Contents
+1. [Installation Guide](#-getting-started)
+2. [Basic Usage](#usage-instructions)
+3. [Feature Documentation](#-comprehensive-feature-guide)
+   - [Basic Features](#-basic-features)
+   - [Mathematical Analysis](#-mathematical-analysis)
+   - [Interactive Tools](#️-interactive-tools)
+   - [Supported Functions](#-supported-functions)
+   - [Advanced Features](#-advanced-features)
+   - [Technical Details](#️-technical-capabilities)
+   - [Educational Tools](#-educational-tools)
+4. [Examples & Tutorials](#examples)
+5. [FAQs](#frequently-asked-questions-faqs)
+6. [Troubleshooting](#important-notes)
+7. [API Reference](https://github.com/fzlzjerry/graphing_calculator/wiki/API-Reference)
+
+For detailed API documentation and advanced usage examples, please visit our [Wiki](https://github.com/fzlzjerry/graphing_calculator/wiki).
 
 ## 🚀 Getting Started
 
