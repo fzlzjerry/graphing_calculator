@@ -241,39 +241,102 @@ class GraphingCalculator(QMainWindow):
 
         # 函数模板组
         templates_group = QGroupBox("Function Templates")
-        templates_group.setStyleSheet(f"""
-            QGroupBox {{
-                font-weight: 600;
-                border: 1px solid {COLORS['border']};
-                border-radius: 6px;
-                margin-top: 12px;
-                padding-top: 8px;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                left: 8px;
-                padding: 0 3px;
-            }}
-        """)
         templates_layout = QVBoxLayout(templates_group)
         
-        # 添加常用函数模板
+        # 添加更多常用函数模板
         templates = [
             ("Linear", "ax+b"),
             ("Quadratic", "ax^2+bx+c"),
+            ("Cubic", "ax^3+bx^2+cx+d"),
             ("Sine", "a*sin(bx+c)"),
+            ("Cosine", "a*cos(bx+c)"),
+            ("Tangent", "a*tan(bx+c)"),
             ("Exponential", "a*e^(bx)"),
-            ("Logarithmic", "a*ln(bx)"),
+            ("Natural Log", "a*ln(bx)"),
+            ("Power", "x^n"),
+            ("Absolute", "|x|"),
+            ("Square Root", "sqrt(x)"),
+            ("Hyperbolic Sine", "sinh(x)"),
+            ("Hyperbolic Cosine", "cosh(x)"),
+            ("Inverse Sine", "asin(x)"),
+            ("Inverse Cosine", "acos(x)"),
+            ("Inverse Tangent", "atan(x)"),
+            ("Gaussian", "e^(-x^2)"),
+            ("Sigmoid", "1/(1+e^(-x))"),
         ]
         
+        # 创建网格布局来放置模板按钮
+        template_grid = QGridLayout()
+        template_grid.setSpacing(4)
+        
+        # 每行放置3个按钮
+        row = 0
+        col = 0
         for name, template in templates:
             btn = QPushButton(name)
             btn.setProperty('secondary', True)
             btn.setToolTip(template)
             btn.clicked.connect(lambda checked, t=template: self.insert_template(t))
-            templates_layout.addWidget(btn)
-
+            template_grid.addWidget(btn, row, col)
+            col += 1
+            if col > 2:  # 每3个按钮
+                col = 0
+                row += 1
+        
+        templates_layout.addLayout(template_grid)
         right_layout.addWidget(templates_group)
+
+        # 添加常用常数组
+        constants_group = QGroupBox("Constants")
+        constants_layout = QHBoxLayout(constants_group)
+        
+        constants = [
+            ("π", "pi"),
+            ("e", "e"),
+            ("φ", "(1+sqrt(5))/2"),  # 黄金比例
+            ("γ", "0.5772156649"),  # 欧拉常数
+        ]
+        
+        for symbol, value in constants:
+            btn = QPushButton(symbol)
+            btn.setProperty('secondary', True)
+            btn.setToolTip(value)
+            btn.clicked.connect(lambda checked, v=value: self.insert_template(v))
+            constants_layout.addWidget(btn)
+        
+        right_layout.addWidget(constants_group)
+
+        # 添加图表操作组
+        operations_group = QGroupBox("Graph Operations")
+        operations_layout = QVBoxLayout(operations_group)
+        
+        # 添加缩放控制
+        zoom_layout = QHBoxLayout()
+        zoom_in_btn = QPushButton("Zoom In")
+        zoom_out_btn = QPushButton("Zoom Out")
+        zoom_reset_btn = QPushButton("Reset Zoom")
+        
+        # Set properties and add widgets individually
+        zoom_in_btn.setProperty('secondary', True)
+        zoom_out_btn.setProperty('secondary', True)
+        zoom_reset_btn.setProperty('secondary', True)
+        zoom_layout.addWidget(zoom_in_btn)
+        zoom_layout.addWidget(zoom_out_btn)
+        zoom_layout.addWidget(zoom_reset_btn)
+        
+        zoom_in_btn.clicked.connect(lambda: self.zoom(0.9, None))
+        zoom_out_btn.clicked.connect(lambda: self.zoom(1.1, None))
+        zoom_reset_btn.clicked.connect(self.reset_view)
+        
+        operations_layout.addLayout(zoom_layout)
+        
+        # 添加其他操作按钮
+        clear_btn = QPushButton("Clear All")
+        clear_btn.setProperty('secondary', True)
+        clear_btn.clicked.connect(self.clear_graphs)
+        operations_layout.addWidget(clear_btn)
+        
+        right_layout.addWidget(operations_group)
         right_layout.addStretch()
 
         # 修改布局为水平布局
@@ -658,7 +721,7 @@ class GraphingCalculator(QMainWindow):
                 label.set_fontfamily('-apple-system')
                 label.set_color('#6C6C70')
             
-            # 美化图例
+            # 化图例
             self.ax.legend(
                 loc='upper left',
                 fontsize=10,
@@ -1083,6 +1146,98 @@ class GraphingCalculator(QMainWindow):
                     QMessageBox.warning(self, "Error", f"An error occurred while exporting the graph: {str(e)}")
         else:
             QMessageBox.warning(self, "Error", "No graph to export.")
+
+    def reset_view(self):
+        """重置图表视图到默认状态"""
+        if hasattr(self, 'ax') and self.ax:
+            self.ax.set_xlim(-10, 10)
+            self.ax.set_ylim(-10, 10)
+            self.x_min.setText("-10")
+            self.x_max.setText("10")
+            self.y_min.setText("-10")
+            self.y_max.setText("10")
+            self.canvas.draw()
+            self.update_plot()
+
+    def clear_graphs(self):
+        """清除所有图表并重置UI状态"""
+        try:
+            # 1. Clear internal state
+            self.expr_list = []
+            self.lines = []
+            self.y_funcs_list = []
+            if hasattr(self, 'intersection_points'):
+                self.intersection_points = []
+            
+            # 2. Clear UI components
+            self.entry_2d.clear()
+            self.result_browser.clear()
+            
+            # 3. Clean up existing canvas and toolbar if they exist
+            if hasattr(self, 'canvas') and self.canvas:
+                # Disconnect existing event handlers
+                if hasattr(self, 'cid_press'):
+                    self.canvas.mpl_disconnect(self.cid_press)
+                if hasattr(self, 'cid_motion'):
+                    self.canvas.mpl_disconnect(self.cid_motion)
+                if hasattr(self, 'cid_release'):
+                    self.canvas.mpl_disconnect(self.cid_release)
+                
+                # Remove existing widgets from layout
+                for i in reversed(range(self.plot_layout.count())):
+                    widget = self.plot_layout.itemAt(i).widget()
+                    if widget:
+                        widget.setParent(None)
+                        widget.deleteLater()
+            
+            # 4. Create new figure and canvas
+            fig, self.ax = plt.subplots(figsize=(10, 8))
+            self.canvas = FigureCanvas(fig)
+            self.toolbar = NavigationToolbar(self.canvas, self)
+            
+            # 5. Set up canvas properties
+            self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            self.canvas.setMinimumHeight(400)
+            
+            # 6. Add widgets to layout
+            self.plot_layout.addWidget(self.toolbar)
+            self.plot_layout.addWidget(self.canvas)
+            
+            # 7. Set up initial graph properties
+            self.ax.grid(self.grid_checkbox.isChecked())
+            self.ax.set_xlim(-10, 10)
+            self.ax.set_ylim(-10, 10)
+            
+            # 8. Apply theme
+            if hasattr(self, 'dark_mode_checkbox') and self.dark_mode_checkbox.isChecked():
+                self.ax.set_facecolor('#2C2C2E')
+                self.canvas.figure.patch.set_facecolor('#1C1C1E')
+            else:
+                self.ax.set_facecolor('#FAFAFA')
+                self.canvas.figure.patch.set_facecolor('#FFFFFF')
+            
+            # 9. Bind events
+            self.canvas.installEventFilter(self)
+            self.cid_press = self.canvas.mpl_connect('button_press_event', self.on_press)
+            self.cid_motion = self.canvas.mpl_connect('motion_notify_event', self.on_motion)
+            self.cid_release = self.canvas.mpl_connect('button_release_event', self.on_release)
+            
+            # 10. Reset other UI components
+            if hasattr(self, 'x_min'):
+                self.x_min.setText("-10")
+                self.x_max.setText("10")
+                self.y_min.setText("-10")
+                self.y_max.setText("10")
+            
+            # 11. Update canvas
+            self.canvas.draw()
+            
+            # 12. Update status
+            self.statusBar().showMessage("All graphs cleared")
+            
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"An error occurred while clearing graphs: {str(e)}")
+            self.statusBar().showMessage("Error clearing graphs")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
