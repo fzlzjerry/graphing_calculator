@@ -1,12 +1,10 @@
 import sys
 import re
-import requests
-import semver
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget,
     QLabel, QLineEdit, QPushButton, QTextBrowser, QMessageBox, QSizePolicy, QSplitter, QFileDialog, QStatusBar, QGroupBox, QFormLayout, QGridLayout, QCheckBox
 )
-from PyQt6.QtCore import Qt, QEvent, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QWheelEvent, QNativeGestureEvent
 import numpy as np
 import sympy as sp
@@ -26,50 +24,7 @@ from scipy import special
 
 matplotlib.use('QtAgg')
 
-class UpdateCheckerThread(QThread):
-    update_available = pyqtSignal(str)
-    up_to_date = pyqtSignal()
-    error = pyqtSignal(str)
-
-    def __init__(self, owner, repo, current_version):
-        super().__init__()
-        self.owner = owner
-        self.repo = repo
-        self.current_version = current_version
-
-    def run(self):
-        try:
-            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/releases'
-            response = requests.get(url)
-            if response.status_code == 200:
-                releases = response.json()
-                if releases:
-                    latest_release = releases[0]
-                    latest_version = latest_release['tag_name']
-                    cleaned_version = self.clean_version(latest_version)
-                    cleaned_current_version = self.clean_version(self.current_version)
-                    if semver.VersionInfo.parse(cleaned_version) > semver.VersionInfo.parse(cleaned_current_version):
-                        self.update_available.emit(latest_version)
-                    else:
-                        self.up_to_date.emit()
-                else:
-                    self.error.emit('No releases found.')
-            else:
-                self.error.emit(f'Failed to fetch releases. Status code: {response.status_code}')
-        except Exception as e:
-            self.error.emit(str(e))
-
-    @staticmethod
-    def clean_version(version):
-        version = version.lstrip('v')
-        version = version.split('-')[0]
-        return version
-
 class GraphingCalculator(QMainWindow):
-    GITHUB_OWNER = 'fzlzjerry'
-    GITHUB_REPO = 'graphing_calculator'
-    current_version = 'v1.0.2'
-
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Graphing Calculator")
@@ -94,18 +49,19 @@ class GraphingCalculator(QMainWindow):
     def initUI(self):
         # 定义颜色常量
         COLORS = {
-            'primary': '#007AFF',
-            'primary_hover': '#0051D5',
-            'primary_pressed': '#003CA6',
+            'primary': '#0A84FF',           # 更鲜艳的蓝色
+            'primary_hover': '#0066CC',
+            'primary_pressed': '#004C99',
             'secondary': '#F2F2F7',
             'secondary_hover': '#E5E5EA',
             'secondary_pressed': '#D1D1D6',
-            'border': '#D1D1D6',
-            'text': '#000000',
-            'text_secondary': '#6C6C70',
+            'border': '#E5E5EA',
+            'text': '#1C1C1E',
+            'text_secondary': '#8E8E93',
             'background': '#FFFFFF',
-            'error': '#FF3B30',
-            'success': '#34C759',
+            'error': '#FF453A',
+            'success': '#32D74B',
+            'card_background': '#F9F9FB',
         }
 
         # 设置窗口样式
@@ -114,21 +70,21 @@ class GraphingCalculator(QMainWindow):
                 background-color: {COLORS['background']};
             }}
             QLabel {{
-                font-family: -apple-system;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: 13px;
                 color: {COLORS['text']};
                 padding: 2px 0px;
             }}
             QPushButton {{
-                font-family: -apple-system;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: 13px;
-                font-weight: 500;
+                font-weight: 600;
                 color: white;
                 background-color: {COLORS['primary']};
                 border: none;
-                border-radius: 6px;
-                padding: 5px 15px;
-                min-height: 24px;
+                border-radius: 8px;
+                padding: 8px 16px;
+                min-height: 32px;
                 margin: 0px;
             }}
             QPushButton:hover {{
@@ -144,6 +100,7 @@ class GraphingCalculator(QMainWindow):
             QPushButton[secondary="true"] {{
                 background-color: {COLORS['secondary']};
                 color: {COLORS['text']};
+                border: 1px solid {COLORS['border']};
             }}
             QPushButton[secondary="true"]:hover {{
                 background-color: {COLORS['secondary_hover']};
@@ -152,13 +109,13 @@ class GraphingCalculator(QMainWindow):
                 background-color: {COLORS['secondary_pressed']};
             }}
             QLineEdit {{
-                font-family: -apple-system;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: 13px;
-                padding: 5px 10px;
-                border: 1px solid {COLORS['border']};
-                border-radius: 6px;
+                padding: 8px 12px;
+                border: 1.5px solid {COLORS['border']};
+                border-radius: 8px;
                 background-color: {COLORS['background']};
-                min-height: 24px;
+                min-height: 32px;
                 selection-background-color: {COLORS['primary']};
             }}
             QLineEdit:focus {{
@@ -166,29 +123,46 @@ class GraphingCalculator(QMainWindow):
                 background-color: {COLORS['background']};
             }}
             QTextBrowser {{
-                font-family: -apple-system;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: 13px;
-                line-height: 1.4;
-                border: 1px solid {COLORS['border']};
-                border-radius: 6px;
-                background-color: {COLORS['background']};
-                padding: 10px;
+                line-height: 1.5;
+                border: 1.5px solid {COLORS['border']};
+                border-radius: 8px;
+                background-color: {COLORS['card_background']};
+                padding: 12px;
                 selection-background-color: {COLORS['primary']};
             }}
             QSplitter::handle {{
                 background-color: {COLORS['border']};
+                width: 1px;
             }}
             QToolBar {{
                 border: none;
                 background-color: {COLORS['background']};
                 spacing: 8px;
-                padding: 4px;
+                padding: 8px;
             }}
             QMessageBox {{
                 background-color: {COLORS['background']};
             }}
             QMessageBox QPushButton {{
-                min-width: 85px;
+                min-width: 100px;
+            }}
+            QGroupBox {{
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                font-weight: 600;
+                border: 1.5px solid {COLORS['border']};
+                border-radius: 10px;
+                margin-top: 16px;
+                padding: 16px;
+                background-color: {COLORS['card_background']};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 8px;
+                padding: 0 8px;
+                color: {COLORS['text']};
+                background-color: {COLORS['card_background']};
             }}
         """)
 
@@ -198,8 +172,9 @@ class GraphingCalculator(QMainWindow):
                 background-color: {COLORS['background']};
                 color: {COLORS['text_secondary']};
                 border-top: 1px solid {COLORS['border']};
-                padding: 4px;
+                padding: 8px;
                 font-size: 12px;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             }}
         """)
         self.statusBar().showMessage("Ready")
@@ -229,7 +204,7 @@ class GraphingCalculator(QMainWindow):
         graph_settings_layout = QFormLayout(graph_settings)
         graph_settings_layout.setSpacing(8)
 
-        # 坐标轴范围设置
+        # 坐标范围设置
         self.x_min = QLineEdit("-10")
         self.x_max = QLineEdit("10")
         self.y_min = QLineEdit("-10")
@@ -301,7 +276,7 @@ class GraphingCalculator(QMainWindow):
         right_layout.addWidget(templates_group)
         right_layout.addStretch()
 
-        # 修改主布局为水平布局
+        # 修改布局为水平布局
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
         main_layout = QHBoxLayout(main_widget)
@@ -346,11 +321,6 @@ class GraphingCalculator(QMainWindow):
         self.entry_2d.setPlaceholderText("Example: x^2 sin(x) x*exp(-x)")
         input_layout.addWidget(self.entry_2d, 1)
 
-        self.update_button = QPushButton("Updates")
-        self.update_button.setProperty('secondary', True)
-        self.update_button.setFixedWidth(80)
-        input_layout.addWidget(self.update_button)
-
         control_layout.addWidget(input_group)
 
         # 按钮组
@@ -375,7 +345,7 @@ class GraphingCalculator(QMainWindow):
 
         control_layout.addWidget(button_group)
 
-        # 结果显���区
+        # 结果显示区
         self.result_browser = QTextBrowser()
         self.result_browser.setMinimumHeight(120)
         control_layout.addWidget(self.result_browser)
@@ -392,10 +362,8 @@ class GraphingCalculator(QMainWindow):
         self.save_button.setToolTip("Save current equations to file")
         self.load_button.setToolTip("Load equations from file")
         self.export_button.setToolTip("Export current graph as image")
-        self.update_button.setToolTip("Check for software updates")
 
         # 连接按钮事件
-        self.update_button.clicked.connect(self.check_for_updates)
         self.plot_button_2d.clicked.connect(self.plot_graphs_2d)
         self.save_button.clicked.connect(self.save_graphs)
         self.load_button.clicked.connect(self.load_graphs)
@@ -527,7 +495,22 @@ class GraphingCalculator(QMainWindow):
     def update_graph_settings(self):
         if self.ax:
             # 更新网格显示
-            self.ax.grid(self.grid_checkbox.isChecked(), linestyle='--', alpha=0.2)
+            self.ax.grid(False)  # 先清除现有网格
+            if self.grid_checkbox.isChecked():
+                if self.dark_mode_checkbox.isChecked():
+                    # 深色模式网格
+                    self.ax.grid(True, linestyle='--', alpha=0.1, color='#FFFFFF', zorder=0)
+                    for grid_line in self.ax.get_xgridlines() + self.ax.get_ygridlines():
+                        grid_line.set_zorder(0)
+                        grid_line.set_alpha(0.1)
+                        grid_line.set_color('#FFFFFF')
+                else:
+                    # 浅色模式网格
+                    self.ax.grid(True, linestyle='--', alpha=0.2, color='#000000', zorder=0)
+                    for grid_line in self.ax.get_xgridlines() + self.ax.get_ygridlines():
+                        grid_line.set_zorder(0)
+                        grid_line.set_alpha(0.2)
+                        grid_line.set_color('#000000')
             
             try:
                 # 更新坐标轴范围
@@ -549,47 +532,6 @@ class GraphingCalculator(QMainWindow):
         if (current_text and not current_text.endswith(' ')):
             current_text += ' '
         self.entry_2d.setText(current_text + template)
-
-    def check_for_updates(self):
-        self.update_thread = UpdateCheckerThread(
-            owner=self.GITHUB_OWNER,
-            repo=self.GITHUB_REPO,
-            current_version=self.current_version
-        )
-        self.update_thread.update_available.connect(self.on_update_available)
-        self.update_thread.up_to_date.connect(self.on_up_to_date)
-        self.update_thread.error.connect(self.on_update_error)
-        self.update_thread.start()
-
-    def on_update_available(self, latest_version):
-        msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Icon.Information)
-        msg_box.setWindowTitle("Update Available")
-        msg_box.setText(f"A new version ({latest_version}) is available.")
-        msg_box.setInformativeText("Would you like to visit the GitHub releases page to download the latest version?")
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        ret = msg_box.exec()
-        if ret == QMessageBox.StandardButton.Yes:
-            import webbrowser
-            url = f'https://github.com/{self.GITHUB_OWNER}/{self.GITHUB_REPO}/releases'
-            webbrowser.open(url)
-
-    def on_up_to_date(self):
-        msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Icon.Information)
-        msg_box.setWindowTitle("No Updates")
-        msg_box.setText("You are using the latest version.")
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg_box.exec()
-
-    def on_update_error(self, error_message):
-        msg_box = QMessageBox(self)
-        msg_box.setIcon(QMessageBox.Icon.Warning)
-        msg_box.setWindowTitle("Update Check Failed")
-        msg_box.setText("Could not check for updates.")
-        msg_box.setInformativeText(error_message)
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
-        msg_box.exec()
 
     def replace_absolute_value(self, expr_str):
         def repl(match):
@@ -755,7 +697,7 @@ class GraphingCalculator(QMainWindow):
             self.canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
             self.canvas.setMinimumHeight(400)  # 设置最小高度
             
-            # 先添加工具栏��再添加画布
+            # 先添加工具栏再添加画布
             self.plot_layout.addWidget(self.toolbar)
             self.plot_layout.addWidget(self.canvas)
             
