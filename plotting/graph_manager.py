@@ -5,6 +5,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import sympy as sp
+from sympy.parsing.sympy_parser import parse_expr
 from matplotlib.backends.backend_qtagg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
@@ -140,7 +141,11 @@ class GraphManager:
         for idx, equation in enumerate(equations):
             try:
                 # 解析表达式
-                expr = sp.parse_expr(equation, transformations=transformations, local_dict=local_dict)
+                expr = parse_expr(
+                    equation,
+                    transformations=transformations,
+                    local_dict=local_dict,
+                )
                 
                 # 检查表达式中的符号
                 symbols_in_expr = expr.free_symbols
