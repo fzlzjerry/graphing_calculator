@@ -65,7 +65,7 @@
 Install the required Python libraries using the following command:
 
 ```bash
-pip install PyQt6 requests semver sympy numpy matplotlib
+pip install PyQt6 requests semver sympy numpy matplotlib scipy
 ```
 
 ### Running the Application
