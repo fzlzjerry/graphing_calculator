@@ -118,10 +118,8 @@ class FunctionAnalyzer:
             limit_neg_inf = sp.limit(expr, x, -sp.oo)
             
             if limit_pos_inf.is_finite and limit_neg_inf.is_finite:
-                if limit_pos_inf == limit_neg_inf:
-                    properties['Horizontal Asymptote'] = limit_pos_inf
-                else:
-                    properties['Horizontal Asymptotes'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
+                # Always use 'Horizontal Asymptotes' (plural) and a consistent dictionary structure
+                properties['Horizontal Asymptotes'] = {'x→∞': limit_pos_inf, 'x→-∞': limit_neg_inf}
             else:
                 properties['Horizontal Asymptotes'] = 'No horizontal asymptotes.'
         except Exception:

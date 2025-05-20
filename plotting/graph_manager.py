@@ -162,11 +162,16 @@ class GraphManager:
                 y_vals = y_func(self.x_vals)
                 self.y_funcs_list.append(y_func)
                 
+                try:
+                    latex_label = sp.latex(expr)
+                except Exception:
+                    latex_label = str(expr) # Fallback to string representation
+                
                 # 绘制函数
                 line, = self.ax.plot(
                     self.x_vals, y_vals, 
                     color=colors[idx % len(colors)],
-                    label=f"${sp.latex(expr)}$"
+                    label=f"${latex_label}$"
                 )
                 self.lines.append(line)
                 
